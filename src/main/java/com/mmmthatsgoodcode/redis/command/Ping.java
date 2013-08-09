@@ -27,7 +27,7 @@ public class Ping extends Command {
 				
 				List<Response> responses = new ArrayList<Response>();
 				
-				System.out.println(buf);
+				System.out.println();
 				
 				return responses;
 				

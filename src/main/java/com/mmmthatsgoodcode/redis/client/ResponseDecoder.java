@@ -22,7 +22,7 @@ public class ResponseDecoder extends ByteToMessageDecoder {
 			in.getBytes((in.readableBytes()-end.length)-1, end);
 			if (Arrays.equals(end, Response.Delimiters.RESPONSE_END)) {
 				// lets start parsing
-				ctx.channel().attr(ClientWriteHandler.COMMAND_ATTRIBUTE).get().decode(in);
+				ctx.channel().attr(ClientWriteHandler.COMMAND_ATTRIBUTE).get().decode(in.readBytes(in.readableBytes()));
 				
 				
 			}

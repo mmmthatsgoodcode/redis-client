@@ -7,6 +7,7 @@ import com.mmmthatsgoodcode.redis.command.Get;
 import com.mmmthatsgoodcode.redis.command.Ping;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
@@ -44,14 +45,14 @@ public class Client {
 			
 			@Override
 			public void operationComplete(ChannelFuture future) throws Exception {
-				future.channel().write(new Get("foo"));
+				future.channel().write(new Ping());
 			}
 		});
 		
 	}
 	
 	public ResponseContainer send(Command command) {
-		
+
 		return command.getResponse();
 		
 	}
