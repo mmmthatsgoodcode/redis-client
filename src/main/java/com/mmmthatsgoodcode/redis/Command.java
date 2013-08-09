@@ -12,6 +12,34 @@ public abstract class Command {
 	public final static Charset ENCODING = Charset.forName("UTF-8");
 	protected ResponseContainer response = new ResponseContainer(this);
 	
+	protected Encoder encoder = new Encoder() { }; // default encoder - should be ok for all commands
+	
+	public abstract class Decoder {
+		
+		public abstract List<Response> decode(ByteBuf buf);
+		
+	}
+	
+	public abstract class Encoder {
+		
+		public ByteBuf encode() {
+			
+			ByteBuf buf = PooledByteBufAllocator.DEFAULT.buffer();
+			buf.writeBytes(getName().getBytes(ENCODING));
+			if (getParameters().size() > 0) {
+				buf.writeBytes(Delimiters.PARAMS_BEGIN);
+				for (String parameter:getParameters()) {
+					buf.writeBytes(parameter.getBytes(ENCODING));
+				}
+			}
+			
+			buf.writeBytes(Delimiters.COMMAND_END);
+			return buf;
+			
+		}
+		
+	}
+	
 	public static class Delimiters {
 		
 		public static final byte[] PARAMS_BEGIN = " ".getBytes(ENCODING);
@@ -32,21 +60,18 @@ public abstract class Command {
 		return parameters;
 	}
 	
-	public ByteBuf encode() {
+	public final ByteBuf encode() {
 		
-		ByteBuf buf = PooledByteBufAllocator.DEFAULT.buffer();
-		buf.writeBytes(getName().getBytes(ENCODING));
-		if (getParameters().size() > 0) {
-			buf.writeBytes(Delimiters.PARAMS_BEGIN);
-			for (String parameter:getParameters()) {
-				buf.writeBytes(parameter.getBytes(ENCODING));
-			}
-		}
+		return encoder.encode();		
+	}
+	
+	public final void decode(ByteBuf buf) {
 		
-		buf.writeBytes(Delimiters.COMMAND_END);
-		return buf;
+		this.response.fill(getDecoder().decode(buf));
 		
 	}
+	
+	public abstract Decoder getDecoder();
 	
 	public ResponseContainer getResponse() {
 		return response;
