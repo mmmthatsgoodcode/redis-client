@@ -1,10 +1,12 @@
 package com.mmmthatsgoodcode.redis;
 
-import com.mmmthatsgoodcode.redis.client.ClientReadHandler;
 import com.mmmthatsgoodcode.redis.client.ClientWriteHandler;
+import com.mmmthatsgoodcode.redis.client.RequestEncoder;
 import com.mmmthatsgoodcode.redis.client.ResponseDecoder;
-import com.mmmthatsgoodcode.redis.command.Get;
-import com.mmmthatsgoodcode.redis.command.Ping;
+import com.mmmthatsgoodcode.redis.protocol.PendingResponse;
+import com.mmmthatsgoodcode.redis.protocol.Request;
+import com.mmmthatsgoodcode.redis.protocol.Response;
+import com.mmmthatsgoodcode.redis.protocol.ResponseContainer;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -34,7 +36,7 @@ public class Client {
 			@Override
 			protected void initChannel(SocketChannel ch) throws Exception {
 				
-				ch.pipeline().addLast(new ClientWriteHandler(), new ResponseDecoder(), new ClientReadHandler());
+				ch.pipeline().addLast(new RequestEncoder(), new ClientWriteHandler(), new ResponseDecoder());
 				
 			}
 			
@@ -43,16 +45,17 @@ public class Client {
 		
 	}
 	
-	public void connect(String host, int port) throws InterruptedException {
+	public Client connect(String host, int port) throws InterruptedException {
 		
 		channel = bootstrap.connect(host, port).sync().channel();
+		return this;
 		
 	}
 	
-	public ResponseContainer send(Command command) {
+	public PendingResponse send(Request request) {
 		
-		channel.writeAndFlush(command);
-		return command.getResponse();
+		channel.writeAndFlush(request);
+		return request.getResponse();
 		
 	}
 	

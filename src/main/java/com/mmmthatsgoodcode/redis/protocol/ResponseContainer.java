@@ -1,4 +1,4 @@
-package com.mmmthatsgoodcode.redis;
+package com.mmmthatsgoodcode.redis.protocol;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -13,10 +13,10 @@ public class ResponseContainer implements Future<List<Response>>, Iterable<Respo
 
 	private List<Response> responses = new ArrayList<Response>();
 	private Semaphore lock = new Semaphore(1);
-	private final Command request;
+	private final Request request;
 	
 	
-	public ResponseContainer(Command request) {
+	public ResponseContainer(Request request) {
 		this.request = request;
 		this.lock.acquireUninterruptibly();
 	}
