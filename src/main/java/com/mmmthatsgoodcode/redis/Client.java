@@ -18,6 +18,10 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 
 public class Client {
 
+	public enum State { CONNECTING, CONNECTED, DISCONNECTED }
+	protected volatile State state = State.CONNECTING;
+	private Channel channel;
+	
 	private Bootstrap bootstrap = new Bootstrap();
 	
 	public Client() {
@@ -39,20 +43,15 @@ public class Client {
 		
 	}
 	
-	public ChannelFuture connect(String host, int port) {
+	public void connect(String host, int port) throws InterruptedException {
 		
-		return bootstrap.connect(host, port).addListener( new ChannelFutureListener() {
-			
-			@Override
-			public void operationComplete(ChannelFuture future) throws Exception {
-				future.channel().write(new Ping());
-			}
-		});
+		channel = bootstrap.connect(host, port).sync().channel();
 		
 	}
 	
 	public ResponseContainer send(Command command) {
-
+		
+		channel.writeAndFlush(command);
 		return command.getResponse();
 		
 	}

@@ -26,6 +26,11 @@
 			<artifactId>netty-all</artifactId>
 			<version>4.0.4.Final</version>
 		</dependency>
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava-primitives</artifactId>
+			<version>r03</version>
+		</dependency>
 	</dependencies>
 
 	<build>

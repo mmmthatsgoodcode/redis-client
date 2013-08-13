@@ -24,10 +24,9 @@ public class Ping extends Command {
 
 			@Override
 			public List<Response> decode(ByteBuf buf) {
-				
 				List<Response> responses = new ArrayList<Response>();
 				
-				System.out.println();
+				responses.add(new Response<Boolean>(true));
 				
 				return responses;
 				
