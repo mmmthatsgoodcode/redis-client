@@ -3,40 +3,40 @@ package com.mmmthatsgoodcode.redis.client.monitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.mmmthatsgoodcode.redis.Client;
 import com.mmmthatsgoodcode.redis.ClientMonitor;
+import com.mmmthatsgoodcode.redis.Connection;
 
 public class LoggingMonitor implements ClientMonitor {
 
 	private static final Logger LOG = LoggerFactory.getLogger(LoggingMonitor.class);
 	
 	@Override
-	public void clientCreated(Client client) {
-		LOG.debug("Created Client {}", client);
+	public void connectionCreated(Connection connection) {
+		LOG.debug("Created Connection {}", connection);
 	}
 
 	@Override
-	public void clientConnecting(Client client) {
-		LOG.debug("Client connecting {}", client);
-
-	}
-
-	@Override
-	public void clientConnectionFailed(Client client, Throwable cause) {
-		LOG.debug("Client could not connect {} because {}", client, cause);
-
+	public void connectionInProgress(Connection connection) {
+		LOG.debug("Connection in progress {}", connection);
 
 	}
 
 	@Override
-	public void clientDisconnected(Client client, Throwable cause) {
-		LOG.debug("Client disconnected {} because {}", client, cause);
+	public void connectionFailed(Connection connection, Throwable cause) {
+		LOG.debug("Connection {} failed because {}", connection, cause);
+
 
 	}
 
 	@Override
-	public void clientConnected(Client client) {
-		LOG.debug("Client connected {}", client);
+	public void connectionLost(Connection connection, Throwable cause) {
+		LOG.debug("Connection {} lost because {}", connection, cause);
+
+	}
+
+	@Override
+	public void connected(Connection connection) {
+		LOG.debug("Connection {} estabilished", connection);
 		
 	}
 

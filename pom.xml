@@ -48,6 +48,11 @@
 			<version>1.6.1</version>
 			<optional>false</optional>
 		</dependency>
+		<dependency>
+			<groupId>com.lmax</groupId>
+			<artifactId>disruptor</artifactId>
+			<version>3.1.1</version>
+		</dependency>
 	</dependencies>
 
 	<build>

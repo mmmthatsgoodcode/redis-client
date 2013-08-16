@@ -4,8 +4,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 
-import com.mmmthatsgoodcode.redis.Client;
 import com.mmmthatsgoodcode.redis.ClientMonitor;
+import com.mmmthatsgoodcode.redis.Connection;
 
 /**
  * A monitor that will try and re-establish broken Channels
@@ -17,7 +17,7 @@ public class SelfHealingMonitor implements ClientMonitor {
 	protected class Healer implements Runnable {
 
 		private final int interval;
-		private LinkedBlockingQueue<Client> reconnectQueue = new LinkedBlockingQueue<Client>();
+		private LinkedBlockingQueue<Connection> reconnectQueue = new LinkedBlockingQueue<Connection>();
 		
 		public Healer(int interval) {
 			this.interval = interval;
@@ -29,8 +29,8 @@ public class SelfHealingMonitor implements ClientMonitor {
 			try {
 				
 				while(true) {
-					Client client = reconnectQueue.take();
-					client.reconnect();
+					Connection connection = reconnectQueue.take();
+//					connection.reconnect();
 					
 					Thread.sleep(interval);
 					
@@ -45,8 +45,8 @@ public class SelfHealingMonitor implements ClientMonitor {
 		
 		}
 		
-		public void needReconnect(Client client) {
-			reconnectQueue.add(client);
+		public void needReconnect(Connection connection) {
+			reconnectQueue.add(connection);
 		}
 		
 	}
@@ -58,33 +58,38 @@ public class SelfHealingMonitor implements ClientMonitor {
 		Thread healerThread = new Thread(healer, "RedisHealer");
 		healerThread.start();
 	}
-	
-	@Override
-	public void clientCreated(Client client) {
-		// TODO Auto-generated method stub
 
+
+	@Override
+	public void connectionFailed(Connection connection, Throwable cause) {
+		healer.needReconnect(connection);
 	}
 
 	@Override
-	public void clientConnecting(Client client) {
-		// TODO Auto-generated method stub
-
+	public void connectionLost(Connection connection, Throwable cause) {
+		healer.needReconnect(connection);
 	}
 
-	@Override
-	public void clientConnectionFailed(Client client, Throwable cause) {
-		healer.needReconnect(client);
-	}
 
 	@Override
-	public void clientDisconnected(Client client, Throwable cause) {
-		healer.needReconnect(client);
-	}
-
-	@Override
-	public void clientConnected(Client client) {
+	public void connectionCreated(Connection client) {
 		// TODO Auto-generated method stub
 		
 	}
+
+
+	@Override
+	public void connectionInProgress(Connection client) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+	@Override
+	public void connected(Connection client) {
+		// TODO Auto-generated method stub
+		
+	}
+
 
 }

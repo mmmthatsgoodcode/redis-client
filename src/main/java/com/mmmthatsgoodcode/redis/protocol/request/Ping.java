@@ -17,4 +17,9 @@ public class Ping extends Request {
 		return out.buffer();
 	}
 
+	@Override
+	public byte[] getName() {
+		return NAME;
+	}
+
 }

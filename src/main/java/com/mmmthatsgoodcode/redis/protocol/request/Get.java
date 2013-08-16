@@ -2,24 +2,30 @@ package com.mmmthatsgoodcode.redis.protocol.request;
 
 import io.netty.buffer.ByteBuf;
 
+import com.mmmthatsgoodcode.redis.protocol.KeyedRequest;
 import com.mmmthatsgoodcode.redis.protocol.Request;
 
-public class Get extends Request {
+public class Get extends KeyedRequest {
 
 	public static final byte[] NAME = "GET".getBytes();
-	private String id;
 	
-	public Get(String id) {
-		this.id = id;
+	public Get(String key) {
+		super(key);
+		setArgc(2);
+
 	}
 	
 	@Override
 	public ByteBuf encode() {
 		EncodeHelper out = new EncodeHelper(byteBufAllocator.buffer());
-		out.addArgc(2);
 		out.addArg(NAME);
-		out.addArg(id.getBytes(ENCODING));
+		out.addArg(key.getBytes(ENCODING));
 		return out.buffer();
+	}
+
+	@Override
+	public byte[] getName() {
+		return NAME;
 	}
 
 }

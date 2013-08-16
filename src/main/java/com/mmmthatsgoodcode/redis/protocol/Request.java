@@ -8,7 +8,7 @@ import com.mmmthatsgoodcode.redis.Protocol;
 
 public abstract class Request extends Protocol {
 
-	public class EncodeHelper {
+	public static class EncodeHelper {
 		
 		private final ByteBuf out;
 		
@@ -48,14 +48,28 @@ public abstract class Request extends Protocol {
 		
 	}
 	
+	
+	protected int argc = 2;
 	protected PendingResponse response = new PendingResponse();
 	public static final byte ARGC_BEGIN = "*".getBytes(ENCODING)[0];
 	public static final byte ARG_LENGTH_BEGIN = "$".getBytes(ENCODING)[0];
+	
+	
 	public abstract ByteBuf encode(); 
+	public abstract byte[] getName();
+	
+	public int getArgc() {
+		return argc;
+	}
+	
+	public void setArgc(int argc) {
+		this.argc = argc;
+	}
 	
 	public PendingResponse getResponse() {
 		return this.response;
 	}
+	
 	
 	
 	
