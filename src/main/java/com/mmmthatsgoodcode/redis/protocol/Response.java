@@ -4,6 +4,9 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufProcessor;
 
@@ -11,6 +14,8 @@ import com.mmmthatsgoodcode.redis.Protocol;
 import com.mmmthatsgoodcode.redis.protocol.response.*;
 
 public abstract class Response<T> extends Protocol {
+	
+	private final static Logger LOG = LoggerFactory.getLogger(Response.class);
 	
 	/**
 	 * A simple wrapper for the decoded value of this response to store a default "not set" value
@@ -66,11 +71,10 @@ public abstract class Response<T> extends Protocol {
 	
 	public Response(ByteBuf in) {
 		this.in = in;
-		this.in.readerIndex(1);
 
 	}
 	
-	public T value() throws InterruptedException {
+	public T value() throws IllegalStateException {
 		if (value.isSet() == false) throw new IllegalStateException();
 		return this.value.value();
 	}
@@ -93,13 +97,16 @@ public abstract class Response<T> extends Protocol {
 	 */
 	public static final Response infer(ByteBuf in) {
 		
-		if (in.getByte(0) == ResponseHintBytes.STATUS) return new StatusResponse(in);
-		if (in.getByte(0) == ResponseHintBytes.ERROR) return new ErrorResponse(in);
-		if (in.getByte(0) == ResponseHintBytes.INTEGER) return new IntegerResponse(in);
-		if (in.getByte(0) == ResponseHintBytes.BULK) return new BulkResponse(in);
-		if (in.getByte(0) == ResponseHintBytes.MULTI) return new MultiBulkResponse(in);
+		byte hint = in.readByte();
+		LOG.debug("Looking at hint {}", new String(new byte[]{hint}));
 		
-		throw new IllegalArgumentException("Redis response "+new String(new byte[]{in.getByte(0)})+" not recognized");
+		if (hint == ResponseHintBytes.STATUS) return new StatusResponse(in);
+		if (hint == ResponseHintBytes.ERROR) return new ErrorResponse(in);
+		if (hint == ResponseHintBytes.INTEGER) return new IntegerResponse(in);
+		if (hint == ResponseHintBytes.BULK) return new BulkResponse(in);
+		if (hint == ResponseHintBytes.MULTI) return new MultiBulkResponse(in);
+		
+		throw new IllegalArgumentException("Redis response "+new String(new byte[]{hint})+" not recognized");
 		
 		
 	}

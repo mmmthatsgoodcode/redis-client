@@ -1,5 +1,6 @@
 package com.mmmthatsgoodcode.redis.client;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -10,6 +11,7 @@ import com.mmmthatsgoodcode.redis.protocol.Request;
 import com.mmmthatsgoodcode.redis.protocol.Response;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufProcessor;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.util.AttributeKey;
@@ -17,31 +19,54 @@ import io.netty.util.AttributeKey;
 public class ResponseDecoder extends ByteToMessageDecoder {
 
 	private final static Logger LOG = LoggerFactory.getLogger(ResponseDecoder.class);
-	public final static AttributeKey<Response> RESPONSE_ATTRIBUTE = new AttributeKey<Response>("response");
 
+	private List<Response> responses = new ArrayList<Response>();
+	private Response currentResponse = null;
+	
 	@Override
 	protected void decode(ChannelHandlerContext ctx, ByteBuf in,
 			List<Object> out) throws Exception {
 		
-		// if the first byte is already available on the buffer - it should be..
-		if (in.readableBytes() >= 1) {
-			// first, find out what kind of request this is ( if the first byte is already available on the buffer - it should be )
-			if (ctx.channel().attr(RESPONSE_ATTRIBUTE).get() == null) ctx.channel().attr(RESPONSE_ATTRIBUTE).set(Response.infer(in));
-			Response response = ctx.channel().attr(RESPONSE_ATTRIBUTE).get();
-			LOG.debug("Received response {}", response);
-			// see if we are done decoding the buffer
-			if (response.decode() == true) {
-				in.clear();
-
-				ctx.channel().attr(RESPONSE_ATTRIBUTE).remove();
-				Request request = ctx.channel().attr(ClientWriteHandler.REQUEST_ATTRIBUTE).getAndRemove();
-
-				request.getResponse().finalize(response);
-				LOG.debug("Finalized request {}", request);
-				
-//				out.add(response);	
-
+		// if there are readable bytes on the buffer - there should be..
+		while (in.readableBytes() >= 1) {
+			LOG.debug("Reading from index {}", in.readerIndex());
+			// first, find out what kind of response this is ( if the first byte is already available on the buffer - it should be )
+			if (currentResponse == null) {
+				currentResponse = Response.infer(in);
+				LOG.debug("Inferred next response in buffer to be: {}", currentResponse);
 			}
+
+			// decode contents from the buffer
+			if (currentResponse.decode() == true) {
+				// decoder finished
+				responses.add(currentResponse);
+				LOG.debug("Decoded response: {}", currentResponse.value());
+
+				
+				// see if we are done completely decoding the buffer
+				if (in.readableBytes() == 2 && in.forEachByte(ByteBufProcessor.FIND_CRLF) != -1) {
+					// last two bytes is a CRLF
+					LOG.debug("End of buffer");
+//					in.clear();
+
+					ctx.fireChannelRead(responses);
+					return;
+
+				}
+				
+				// otherwise..
+				LOG.debug("Still {} bytes to go in buffer", in.readableBytes());
+				in.readerIndex(in.readerIndex()+2);
+				
+				currentResponse = null;
+
+			} else {
+
+				// bytes in buffer were not enough to decode a response, continue..
+				return;
+			
+			}
+
 		
 		}
 		

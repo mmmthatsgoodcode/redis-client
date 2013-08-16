@@ -53,8 +53,8 @@ public class RequestRouter implements EventHandler<RequestEvent> {
 			
 		} else {
 			
-			// just forward it to a random host right now
-			client.getHosts().get(new Random().nextInt(client.getHosts().size())).schedule(event.getRequest());
+			if (event.getHash() != null) client.getHosts().get(Hashing.consistentHash(event.getHash(), client.getHosts().size())).schedule(event.getRequest());
+			else client.getHosts().get(new Random().nextInt(client.getHosts().size())).schedule(event.getRequest());
 			
 		}
 		

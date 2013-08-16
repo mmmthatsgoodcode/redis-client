@@ -20,13 +20,15 @@ public class StatusResponse extends Response<String> {
 	@Override
 	public boolean decode() {
 		
+		// there is at least one delimiter in the buffer
 		if (this.in.forEachByte(ByteBufProcessor.FIND_CRLF) != -1) {
-			byte[] statusCode = this.in.readBytes( this.in.forEachByte(ByteBufProcessor.FIND_CRLF) - this.in.readerIndex() ).array();
+			byte[] statusCode = this.in.readBytes( this.in.forEachByte(ByteBufProcessor.FIND_CRLF) - this.in.readerIndex() ).array(); // read up to the new line..
 			setValue(new String(statusCode));
-			this.in.readerIndex(this.in.writerIndex());
 			return true;
 		}
 		
 		return false;
 	}	
+	
+
 }

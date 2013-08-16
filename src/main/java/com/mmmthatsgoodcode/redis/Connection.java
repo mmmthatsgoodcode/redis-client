@@ -1,7 +1,11 @@
 package com.mmmthatsgoodcode.redis;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -12,6 +16,7 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.util.AttributeKey;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,8 +33,10 @@ import com.lmax.disruptor.WorkHandler;
 import com.lmax.disruptor.WorkProcessor;
 import com.mmmthatsgoodcode.redis.client.ClientWriteHandler;
 import com.mmmthatsgoodcode.redis.client.RequestEncoder;
+import com.mmmthatsgoodcode.redis.client.RequestFulfiller;
 import com.mmmthatsgoodcode.redis.client.RequestLogger;
 import com.mmmthatsgoodcode.redis.client.ResponseDecoder;
+import com.mmmthatsgoodcode.redis.client.ResponseLogger;
 import com.mmmthatsgoodcode.redis.disruptor.processor.RequestEvent;
 import com.mmmthatsgoodcode.redis.protocol.Request;
 
@@ -46,13 +53,15 @@ public class Connection  {
 	 * @author andras
 	 *
 	 */
-	private class RequestProcessor implements WorkHandler<RequestEvent>, LifecycleAware {
+	public static class RequestProcessor implements EventHandler<RequestEvent>, LifecycleAware {
 
 		private final String name;
 		private final Logger LOG;
+		private final Connection connection;
 
-		public RequestProcessor(String name) {
+		public RequestProcessor(Connection connection, String name) {
 			this.name = name;
+			this.connection = connection;
 			LOG = LoggerFactory.getLogger(this.getClass());
 			LOG.debug("Created!");
 		}
@@ -61,13 +70,6 @@ public class Connection  {
 			return name;
 		}
 
-
-		@Override
-		public void onEvent(RequestEvent event) throws Exception {
-			LOG.debug("Received Request {} for processing on {}", event.getRequest(), Connection.this.channel);
-			Connection.this.channel.writeAndFlush(event.getRequest()).syncUninterruptibly();
-						
-		}
 
 		@Override
 		public void onStart() {
@@ -79,28 +81,13 @@ public class Connection  {
 			LOG.debug("Shut down!");
 			
 		}
-		
-	}
-	
-	private class RequestExceptionHandler implements ExceptionHandler {
 
-		private final Logger LOG = LoggerFactory.getLogger(RequestExceptionHandler.class);
-		
 		@Override
-		public void handleEventException(Throwable ex, long sequence,
-				Object event) {
-			LOG.error("Event exception {}", ex);
+		public void onEvent(RequestEvent event, long sequence,
+				boolean endOfBatch) throws Exception {
+			LOG.debug("Received Request {} for processing on {}", event.getRequest(), connection);
+			connection.send(event.getRequest());
 			
-		}
-
-		@Override
-		public void handleOnStartException(Throwable ex) {
-			LOG.error("OnStart exception {}", ex);
-		}
-
-		@Override
-		public void handleOnShutdownException(Throwable ex) {
-			LOG.error("OnShutdown exception {}", ex);			
 		}
 		
 	}
@@ -113,9 +100,11 @@ public class Connection  {
 	private final Host host;
 	private final RingBuffer<RequestEvent> sendBuffer;
 	private static final Logger LOG = LoggerFactory.getLogger(Connection.class);
-	protected ExecutorService processors = Executors.newFixedThreadPool(1);
+	protected ExecutorService processors = Executors.newCachedThreadPool();
 
-	public Connection(Host host, WaitStrategy sendWaitStrategy, int bufferSize) {
+	public static final AttributeKey<BlockingQueue<Request>> OUTBOUND = new AttributeKey<BlockingQueue<Request>>("out");
+
+	public Connection(Host host, WaitStrategy sendWaitStrategy, int sendBufferSize) {
 		
 		this.host = host;
 		
@@ -128,8 +117,9 @@ public class Connection  {
 			@Override
 			protected void initChannel(SocketChannel ch) throws Exception {
 				
-//				ch.pipeline().addLast(new RequestLogger(), new RequestEncoder(), new ClientWriteHandler(), new ResponseDecoder());
-				ch.pipeline().addLast(new RequestEncoder(), new ClientWriteHandler(), new ResponseDecoder());
+				ch.attr(OUTBOUND).set(new LinkedBlockingQueue<Request>());
+//				ch.pipeline().addLast(new RequestLogger(), new RequestEncoder(), new ClientWriteHandler(), new ResponseLogger(), new ResponseDecoder(), new RequestFulfiller());
+				ch.pipeline().addLast(new RequestEncoder(), new ClientWriteHandler(), new ResponseDecoder(), new RequestFulfiller());
 
 			}
 			
@@ -137,7 +127,7 @@ public class Connection  {
 		});
 		
 		// create this connections outbound request buffer
-		sendBuffer = RingBuffer.createMultiProducer(RequestEvent.EVENT_FACTORY, bufferSize, sendWaitStrategy);
+		sendBuffer = RingBuffer.createMultiProducer(RequestEvent.EVENT_FACTORY, sendBufferSize, sendWaitStrategy);
 		
 		LOG.debug("Connection object created");
 		
@@ -152,10 +142,24 @@ public class Connection  {
 	public Connection schedule(Request request) {
 		sendBuffer.publishEvent(new RequestEvent.RequestEventTranslator(request));
 
-		LOG.debug("Sent Request {} to ringbuffer", request);
-		System.out.println( sendBuffer.remainingCapacity() );
+		LOG.debug("Request {} sent to ringbuffer", request);
 
 		return this;
+	}
+	
+	/**
+	 * This should be called by the RequestProcessor
+	 * @param request
+	 * @return
+	 * @throws InterruptedException 
+	 */
+	public Connection send(Request request) {
+		
+		channel.writeAndFlush(request);
+		LOG.debug("Sent!");
+		
+		return this;
+		
 	}
 	
 	public synchronized Connection connect() {
@@ -179,7 +183,7 @@ public class Connection  {
 						
 			// create and start the request processor for this connection
 			String processorName = "Processor-"+host+"#"+hashCode();
-			WorkProcessor<RequestEvent> sender = new WorkProcessor<RequestEvent>(sendBuffer, sendBuffer.newBarrier(), new RequestProcessor(processorName), new RequestExceptionHandler(), new Sequence(Sequencer.INITIAL_CURSOR_VALUE));
+			BatchEventProcessor<RequestEvent> sender = new BatchEventProcessor<RequestEvent>(sendBuffer, sendBuffer.newBarrier(), new RequestProcessor(this, processorName));
 			sendBuffer.addGatingSequences(sender.getSequence());
 
 			processors.execute(sender);

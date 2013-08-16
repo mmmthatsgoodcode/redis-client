@@ -2,10 +2,15 @@ package com.mmmthatsgoodcode.redis;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -17,6 +22,8 @@ import com.lmax.disruptor.SleepingWaitStrategy;
 import com.lmax.disruptor.YieldingWaitStrategy;
 import com.mmmthatsgoodcode.redis.client.monitor.LoggingMonitor;
 import com.mmmthatsgoodcode.redis.protocol.PendingResponse;
+import com.mmmthatsgoodcode.redis.protocol.Response;
+import com.mmmthatsgoodcode.redis.protocol.request.Get;
 import com.mmmthatsgoodcode.redis.protocol.request.Ping;
 import com.mmmthatsgoodcode.redis.protocol.request.Set;
 
@@ -33,6 +40,7 @@ public class ClientTest {
 		.addMonitor(new LoggingMonitor())
 		.withSendWaitStrategy(new SleepingWaitStrategy())
 		.shouldBatch(false)
+		.shouldHash(true)
 		.build();
 		
 		CLIENT.connect();
@@ -59,19 +67,21 @@ public class ClientTest {
 	}
 	
 	@Test
-	@Ignore
 	public void multiThreadedPipelineTest() throws InterruptedException {
 				
 		ExecutorService executor = Executors.newFixedThreadPool(8);
 		
-		final List<PendingResponse> responses = new ArrayList<PendingResponse>();
+		final BlockingQueue<PendingResponse> responses = new LinkedBlockingQueue<PendingResponse>();
 		
 		for (int r=1; r <= 10; r++) {
 			executor.execute(new Runnable() {
 
 				@Override
 				public void run() {
-					responses.add( CLIENT.send(new Set(UUID.randomUUID().toString(), "i'm really really random")) );
+					String id = UUID.randomUUID().toString();
+					responses.add( CLIENT.send(new Set(id, "i'm really really random")) );
+					responses.add( CLIENT.send(new Get(id)) );
+
 				}
 				
 			});
@@ -79,25 +89,42 @@ public class ClientTest {
 		
 		executor.shutdown();
 		executor.awaitTermination(60, TimeUnit.SECONDS);
+				
+		for(PendingResponse response:responses) {
+			try {
+				System.out.println(response.get(1, TimeUnit.SECONDS).value());
+			} catch (ExecutionException | TimeoutException e) {
+				System.err.println("Timed out");
+			}
+		}
 		
-		Thread.sleep(2000);
 		
 	}
 	
 	
 	@Test
+	@Ignore
 	public void singleThreadedPipelineTest() throws InterruptedException {
 		
 		final List<PendingResponse> responses = new ArrayList<PendingResponse>();
 
-		for (int r=1; r <= 100; r++) {
+		for (int r=1; r <= 5; r++) {
 
-			responses.add( CLIENT.send(new Set(UUID.randomUUID().toString(), "i'm really really random")) );
-			
+			String id = UUID.randomUUID().toString();
+			responses.add( CLIENT.send(new Set(id, "i'm really really random")) );
+			responses.add( CLIENT.send(new Get(id)) );
+
 		}		
 		
-		Thread.sleep(5000);
 		
+		for(PendingResponse response:responses) {
+			try {
+				System.out.println(response.get(2, TimeUnit.SECONDS));
+			} catch (ExecutionException | TimeoutException e) {
+				System.err.println("Timed out");
+			}
+		}
+				
 	}
 	
 }
