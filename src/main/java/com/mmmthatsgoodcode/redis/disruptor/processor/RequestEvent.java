@@ -8,7 +8,7 @@ import com.mmmthatsgoodcode.redis.protocol.Request;
 public class RequestEvent {
 
 			
-	public static class KeyedRequestEventFactory implements EventFactory<RequestEvent> {
+	public static class RequestEventFactory implements EventFactory<RequestEvent> {
 
 		@Override
 		public RequestEvent newInstance() {
@@ -32,9 +32,9 @@ public class RequestEvent {
 		
 	}
 	
-	public static final EventFactory<RequestEvent> EVENT_FACTORY = new KeyedRequestEventFactory();
+	public static final EventFactory<RequestEvent> EVENT_FACTORY = new RequestEventFactory();
 	private Request request = null;
-	private HashCode hash;
+	private HashCode hash = null;
 	
 	public void place(Request request) {
 		this.request = request;

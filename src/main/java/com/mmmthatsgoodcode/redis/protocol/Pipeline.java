@@ -51,7 +51,12 @@ public class Pipeline extends Request implements Iterable<Request> {
 	}
 
 	public String toString() {
-		return "Pipelined("+this.requests.size()+")";
+		return "Pipelined("+this.requests.size()+"):"+requests;
+	}
+
+	@Override
+	public boolean canPipe() {
+		return false; // obviously.
 	}
 	
 	

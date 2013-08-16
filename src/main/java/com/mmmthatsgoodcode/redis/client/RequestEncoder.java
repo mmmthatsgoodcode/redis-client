@@ -23,12 +23,14 @@ public class RequestEncoder extends MessageToByteEncoder<Request> {
 	protected void encode(ChannelHandlerContext ctx, Request msg, ByteBuf out)
 			throws Exception {
 		
+		LOG.debug("Outbound request {}", msg);
+		
 		EncodeHelper helper = new Request.EncodeHelper(out);
 		ByteBuf buf = msg.encode();
-//		helper.addArgc(msg.getArgc());
+		if (msg.getArgc() > 0) helper.addArgc(msg.getArgc());
 		helper.buffer().writeBytes(buf);
 
-		LOG.debug("Sent request {}, {}", msg, msg.getName()+" "+msg.getArgc());
+//		LOG.debug("Sent request {}, {}", msg, msg.getName()+" "+msg.getArgc());
 		
 	}
 

@@ -6,6 +6,11 @@ import java.util.List;
 
 
 
+
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.lmax.disruptor.WaitStrategy;
 import com.mmmthatsgoodcode.redis.Client.HostInfo;
 import com.mmmthatsgoodcode.redis.client.NoConnectionsAvailableException;
@@ -73,6 +78,7 @@ public class Host {
 	private List<Connection> connections = new ArrayList<Connection>();
 	private final Client client;
 	private final HostInfo hostInfo;
+	private final static Logger LOG = LoggerFactory.getLogger(Host.class);
 	
 	private Host(Client client, HostInfo hostInfo) {
 		this.client = client;
@@ -96,7 +102,13 @@ public class Host {
 	}
 	
 	public void schedule(Request request) throws NoConnectionsAvailableException {
-		if (connections.size() == 0) throw new IllegalStateException("No connections!");
+		LOG.debug("Incoming Request {}", request);
+		if (connections.size() == 0) {
+			LOG.error("Attempted to schedule request {} with no Connections available!");
+			throw new IllegalStateException("No connections!");
+		}
+		
+		Connection selectedConnection;
 		if (connections.size() > 1) {
 			// TODO selection strategy ?
 			List<Connection> eligibleConnections = new ArrayList<Connection>(connections.size());
@@ -107,10 +119,23 @@ public class Host {
 			if (eligibleConnections.size() == 0) throw new NoConnectionsAvailableException();
 			
 			Collections.shuffle(eligibleConnections);
-			eligibleConnections.get(0).schedule(request);
+			selectedConnection = eligibleConnections.get(0);
+			
 			
 		} else {
-			connections.get(0).schedule(request);;
+			selectedConnection = connections.get(0);
+		}
+		
+		LOG.debug("Selected connection {}", selectedConnection);
+		selectedConnection.schedule(request);
+
+		
+	}
+	
+	public void connect() {
+		if (connections.size() == 0) throw new IllegalStateException("No Connections to connect!");
+		for (Connection connection:connections) {
+			connection.connect();
 		}
 		
 	}

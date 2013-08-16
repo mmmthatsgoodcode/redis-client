@@ -3,6 +3,7 @@ package com.mmmthatsgoodcode.redis.disruptor.processor;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,18 +35,39 @@ public class RequestRouter implements EventHandler<RequestEvent> {
 	public void onEvent(RequestEvent event, long sequence, boolean endOfBatch)
 			throws Exception {
 		
-		LOG.debug("Adding {} to batch", event);
+		// see if this can be executed in a pipeline
+		if (event.getRequest().canPipe() && client.shouldBatch()) {
 		
-		pipelines.get( Hashing.consistentHash(event.getHash(), client.getHosts().size()) ).add(event.getRequest());
+			LOG.trace("Adding {} to pipeline", event);
+
+			// should it go to a specific pipeline?
+			if (event.getHash() != null) {
+
+				pipelines.get( Hashing.consistentHash(event.getHash(), client.getHosts().size()) ).add(event.getRequest());
+				
+			} else {
+				
+				pipelines.get(new Random().nextInt(pipelines.size())).add(event.getRequest());
+				
+			}
+			
+		} else {
+			
+			// just forward it to a random host right now
+			client.getHosts().get(new Random().nextInt(client.getHosts().size())).schedule(event.getRequest());
+			
+		}
 		
+		// batch ended, fire them pipelines!
 		if (endOfBatch) {
 			
-			LOG.debug("Batch done, sending {} pipelines", pipelines.size());
+			LOG.debug("Batch done, sending pipelines {}", pipelines);
 			int at=0;
 			for (Pipeline pipeline:pipelines) {
 				if (pipeline.size() > 0) {
-					LOG.debug("Forwarding pipeline with {} requests", pipeline.size());
-					client.getHosts().get(at).schedule(pipeline);
+					Host selectedHost = client.getHosts().get(at);
+					LOG.debug("Forwarding pipeline with {} requests to {}", pipeline.size(), selectedHost);
+					selectedHost.schedule(pipeline);
 				}
 				at++;
 			}
@@ -53,6 +75,7 @@ public class RequestRouter implements EventHandler<RequestEvent> {
 			// prepare pipelines for next batch
 			initPipelines();
 		}
+		
 	}
 	
 	private void initPipelines() {

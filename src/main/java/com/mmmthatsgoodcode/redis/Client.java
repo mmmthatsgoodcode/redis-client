@@ -2,12 +2,21 @@ package com.mmmthatsgoodcode.redis;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.google.common.hash.Hashing;
+import com.lmax.disruptor.BatchEventProcessor;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.SleepingWaitStrategy;
 import com.lmax.disruptor.WaitStrategy;
 import com.mmmthatsgoodcode.redis.Host.Builder;
 import com.mmmthatsgoodcode.redis.disruptor.processor.RequestEvent;
+import com.mmmthatsgoodcode.redis.disruptor.processor.RequestHasher;
+import com.mmmthatsgoodcode.redis.disruptor.processor.RequestRouter;
+import com.mmmthatsgoodcode.redis.protocol.PendingResponse;
+import com.mmmthatsgoodcode.redis.protocol.Request;
 
 public class Client {
 
@@ -20,8 +29,8 @@ public class Client {
 		private int processingBufferSize = 1024;
 		private int sendBufferSize = 1024;
 		private List<HostInfo> hosts = new ArrayList<HostInfo>();
-		private boolean shouldBatch = true;
-		private boolean shouldHash = true;
+		private AtomicBoolean shouldBatch = new AtomicBoolean(true);
+		private AtomicBoolean shouldHash = new AtomicBoolean(true);
 		private boolean connectionRecovery = true;
 		private WaitStrategy processingWaitStrategy = new SleepingWaitStrategy();
 		private WaitStrategy sendWaitStrategy = new SleepingWaitStrategy();
@@ -59,12 +68,12 @@ public class Client {
 		}
 		
 		public Builder shouldBatch(boolean shouldBatch) {
-			this.shouldBatch = shouldBatch;
+			this.shouldBatch.set(shouldBatch);
 			return this;
 		}
 		
 		public Builder shouldHash(boolean shouldHash) {
-			this.shouldHash = shouldHash;
+			this.shouldHash.set(shouldHash);
 			return this;
 		}
 		
@@ -109,16 +118,21 @@ public class Client {
 			return this.port;
 		}
 		
+		public String toString() {
+			return hostname+":"+port;
+		}
+		
 	}
 
 	protected final List<Host> hosts;
-	protected volatile boolean shouldBatch;
-	protected volatile boolean shouldHash;
+	protected AtomicBoolean shouldBatch;
+	protected AtomicBoolean shouldHash;
 	protected final RingBuffer<RequestEvent> processingBuffer;
 	protected final List<ClientMonitor> monitors;
 	protected final boolean connectionRecovery;
+	protected ExecutorService processors = Executors.newFixedThreadPool(2);
 	
-	private Client(List<HostInfo> hosts, int connectionsPerHost, boolean shouldBatch, boolean shouldHash, boolean connectionRecovery, WaitStrategy processingWaitStrategy, int processingBufferSize, WaitStrategy sendWaitStrategy, int sendBufferSize, List<ClientMonitor> monitors) {
+	private Client(List<HostInfo> hosts, int connectionsPerHost, AtomicBoolean shouldBatch, AtomicBoolean shouldHash, boolean connectionRecovery, WaitStrategy processingWaitStrategy, int processingBufferSize, WaitStrategy sendWaitStrategy, int sendBufferSize, List<ClientMonitor> monitors) {
 
 		this.hosts = new ArrayList<Host>();
 		
@@ -126,6 +140,7 @@ public class Client {
 			this.hosts.add(
 					new Host.Builder()
 					.setHostInfo(hostInfo)
+					.forClient(this)
 					.connections(connectionsPerHost)
 					.withSendBufferSize(sendBufferSize)
 					.withSendWaitStrategy(sendWaitStrategy)
@@ -135,8 +150,22 @@ public class Client {
 		this.shouldBatch = shouldBatch;
 		this.shouldHash = shouldHash;
 		this.connectionRecovery = connectionRecovery;
-		this.processingBuffer = RingBuffer.createMultiProducer(RequestEvent.EVENT_FACTORY, processingBufferSize, processingWaitStrategy);
 		this.monitors = monitors;
+		
+		// create processing buffer
+		processingBuffer = RingBuffer.createMultiProducer(RequestEvent.EVENT_FACTORY, processingBufferSize, processingWaitStrategy);
+
+		// create processors
+		BatchEventProcessor<RequestEvent> hasher = new BatchEventProcessor<RequestEvent>( processingBuffer, processingBuffer.newBarrier(), new RequestHasher(this, Hashing.murmur3_128()) );
+		BatchEventProcessor<RequestEvent> router = new BatchEventProcessor<RequestEvent>( processingBuffer, processingBuffer.newBarrier(hasher.getSequence()), new RequestRouter(this));
+		
+		// start processors
+		processors.execute(hasher);
+		processors.execute(router);
+		
+		processingBuffer.addGatingSequences(router.getSequence());
+		
+		
 	}
 	
 	public List<ClientMonitor> getMonitors() {
@@ -145,6 +174,28 @@ public class Client {
 	
 	public List<Host> getHosts() {
 		return hosts;
+	}
+	
+	public void connect() {
+		if (hosts.size() == 0) throw new IllegalStateException("No Hosts to connect to!");
+		for(Host host:hosts) {
+			host.connect();
+		}
+	}
+	
+	public PendingResponse send(Request request) {
+		
+		processingBuffer.publishEvent(new RequestEvent.RequestEventTranslator(request));
+		return request.getResponse();
+		
+	}
+	
+	public boolean shouldBatch() {
+		return shouldBatch.get();
+	}
+	
+	public boolean shouldHash() {
+		return shouldHash.get();
 	}
 	
 }

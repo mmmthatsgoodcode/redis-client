@@ -9,10 +9,13 @@ public class Ping extends Request {
 
 	public static final byte[] NAME = "PING".getBytes();
 	
+	public Ping() {
+		setArgc(1);
+	}
+	
 	@Override
 	public ByteBuf encode() {
 		EncodeHelper out = new EncodeHelper(byteBufAllocator.buffer());
-		out.addArgc(1);
 		out.addArg(NAME);
 		return out.buffer();
 	}
@@ -20,6 +23,11 @@ public class Ping extends Request {
 	@Override
 	public byte[] getName() {
 		return NAME;
+	}
+	
+	@Override
+	public boolean canPipe() {
+		return true;
 	}
 
 }

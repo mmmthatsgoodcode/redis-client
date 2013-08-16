@@ -57,6 +57,7 @@ public abstract class Request extends Protocol {
 	
 	public abstract ByteBuf encode(); 
 	public abstract byte[] getName();
+	public abstract boolean canPipe();
 	
 	public int getArgc() {
 		return argc;

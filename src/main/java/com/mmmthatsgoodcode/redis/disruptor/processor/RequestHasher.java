@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.hash.HashFunction;
 import com.lmax.disruptor.EventHandler;
+import com.mmmthatsgoodcode.redis.Client;
 import com.mmmthatsgoodcode.redis.protocol.KeyedRequest;
 
 /**
@@ -17,15 +18,17 @@ public class RequestHasher implements EventHandler<RequestEvent> {
 	private static final Logger LOG = LoggerFactory.getLogger(RequestHasher.class);
 	
 	private final HashFunction hasher;
+	private Client client;
 	
-	public RequestHasher(HashFunction hasher) {
+	public RequestHasher(Client client, HashFunction hasher) {
 		this.hasher = hasher;
+		this.client = client;
 	}
 	
 	@Override
 	public void onEvent(RequestEvent event, long sequence, boolean endOfBatch)
 			throws Exception {
-		if (event.getRequest() instanceof KeyedRequest) {
+		if (client.shouldHash() && event.getRequest() instanceof KeyedRequest) {
 			event.setHash(hasher.hashString(((KeyedRequest) event.getRequest()).getKey()));
 			LOG.debug("Hashed! {} {}", event, (endOfBatch?"end":"cont"));
 		}

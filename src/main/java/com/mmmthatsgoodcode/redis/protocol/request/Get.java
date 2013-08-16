@@ -27,5 +27,10 @@ public class Get extends KeyedRequest {
 	public byte[] getName() {
 		return NAME;
 	}
+	
+	@Override
+	public boolean canPipe() {
+		return true;
+	}
 
 }
