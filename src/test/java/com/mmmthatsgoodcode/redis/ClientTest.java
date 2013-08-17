@@ -22,6 +22,7 @@ import com.codahale.metrics.Timer.Context;
 import com.lmax.disruptor.BusySpinWaitStrategy;
 import com.lmax.disruptor.SleepingWaitStrategy;
 import com.lmax.disruptor.YieldingWaitStrategy;
+import com.mmmthatsgoodcode.redis.client.NoConnectionsAvailableException;
 import com.mmmthatsgoodcode.redis.client.monitor.LoggingMonitor;
 import com.mmmthatsgoodcode.redis.protocol.PendingResponse;
 import com.mmmthatsgoodcode.redis.protocol.Response;
@@ -40,12 +41,9 @@ public class ClientTest {
 		.addHost("127.0.0.1", 6379)
 		.addHost("127.0.0.1", 6380)
 		.addMonitor(new LoggingMonitor())
-		.withSendWaitStrategy(new SleepingWaitStrategy())
 		.shouldBatch(false)
 		.shouldHash(true)
-		.withProcessingBufferSize(1024)
 		.withConnectionsPerHost(1)
-		.withSendBufferSize(1024)
 		.build();
 		
 		CLIENT.connect();
@@ -61,13 +59,26 @@ public class ClientTest {
 	
 	
 	@Test
-	@Ignore
-	public void testSimpleCommands() throws InterruptedException {
+	public void testSimpleCommands() throws InterruptedException, NoConnectionsAvailableException {
 		
 		CLIENT.send(new Ping());
 				
 		
 	}
+//	
+//	@Test
+//	public void memoryLeakTest() {
+//		
+//		for (int r=1; r <= 1000000; r++) {
+//			
+//			String id = UUID.randomUUID().toString();
+//			CLIENT.send(new Set(id, "value-for-"+id)).get();
+//			CLIENT.send(new Get(id)).get();
+//			
+//		}
+//		
+//	}
+//	
 	
 	@Test
 	public void multiThreadedPipelineTest() throws InterruptedException {
@@ -75,20 +86,17 @@ public class ClientTest {
 		ExecutorService executor = Executors.newFixedThreadPool(8);
 		final Timer getLatency = new Timer();
 		
-		for (int r=1; r <= 1000000; r++) {
+		for (int r=1; r <= 100000; r++) {
 			executor.execute(new Runnable() {
 
 				@Override
 				public void run() {
 					String id = UUID.randomUUID().toString();
-//					System.out.println( "setting "+id);
-//					System.out.println( "set response - "+CLIENT.send(new Set(id, "value-for-"+id)).get().value() );
-					String setResponse = (String) CLIENT.send(new Set(id, "value-for-"+id)).get().value();
-					
-//					System.out.println( "getting "+id);
 					Context timer = null;
 					try {
-//						System.out.println( id+" value - "+CLIENT.send(new Get(id)).get(1, TimeUnit.SECONDS).value() );
+						
+						String setResponse = (String) CLIENT.send(new Set(id, "value-for-"+id)).get().value();
+
 						timer = getLatency.time();
 						String response = (String) CLIENT.send(new Get(id)).get(100, TimeUnit.MILLISECONDS).value();
 						timer.stop();
@@ -98,6 +106,9 @@ public class ClientTest {
 					} catch (IllegalStateException | InterruptedException
 							| ExecutionException | TimeoutException e) {
 						System.err.println(id+" Timed out");
+					} catch (NoConnectionsAvailableException e) {
+						System.err.println(id+" Failed to send");
+					} finally {
 						if (timer != null) timer.stop();
 					}
 					
@@ -120,12 +131,12 @@ public class ClientTest {
 	
 	@Test
 	@Ignore
-	public void singleThreadedPipelineTest() throws InterruptedException {
+	public void singleThreadedPipelineTest() throws InterruptedException, NoConnectionsAvailableException {
 		
 		final Timer getLatency = new Timer();
 		final List<PendingResponse> responses = new ArrayList<PendingResponse>();
 
-		for (int r=1; r <= 100000; r++) {
+		for (int r=1; r <= 10; r++) {
 
 			String id = UUID.randomUUID().toString();
 			responses.add( CLIENT.send(new Set(id, "i'm really really random")) );

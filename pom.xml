@@ -13,7 +13,18 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
-
+	<distributionManagement>
+		<repository>
+			<id>mmmthatsgoodcode</id>
+			<name>MMMThatsGoodCode</name>
+			<url>http://build.mmmthatsgoodcode.com:28080/nexus/content/repositories/releases/</url>
+		</repository>
+		<snapshotRepository>
+			<id>mmmthatsgoodcode</id>
+			<name>MMMThatsGoodCode</name>
+			<url>http://build.mmmthatsgoodcode.com:28080/nexus/content/repositories/snapshots/</url>
+		</snapshotRepository>
+	</distributionManagement>
 	<dependencies>
 		<dependency>
 			<groupId>junit</groupId>

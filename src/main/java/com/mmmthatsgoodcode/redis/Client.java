@@ -2,19 +2,23 @@ package com.mmmthatsgoodcode.redis;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.lmax.disruptor.BatchEventProcessor;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.SleepingWaitStrategy;
 import com.lmax.disruptor.WaitStrategy;
 import com.mmmthatsgoodcode.redis.Host.Builder;
+import com.mmmthatsgoodcode.redis.client.NoConnectionsAvailableException;
 import com.mmmthatsgoodcode.redis.disruptor.processor.RequestEvent;
 import com.mmmthatsgoodcode.redis.disruptor.processor.RequestHasher;
 import com.mmmthatsgoodcode.redis.disruptor.processor.RequestRouter;
+import com.mmmthatsgoodcode.redis.protocol.KeyedRequest;
 import com.mmmthatsgoodcode.redis.protocol.PendingResponse;
 import com.mmmthatsgoodcode.redis.protocol.Request;
 
@@ -22,20 +26,13 @@ public class Client {
 
 	public static class Builder {
 		
-		public final static int MIN_PROCESSING_BUFFER_SIZE = 2*Runtime.getRuntime().availableProcessors();
-		public final static int MIN_SENDING_BUFFER_SIZE = 2*Runtime.getRuntime().availableProcessors();
-		
 		private int connectionsPerHost = 1;
-		private int processingBufferSize = 1024;
-		private int sendBufferSize = 1024;
 		private List<HostInfo> hosts = new ArrayList<HostInfo>();
 		private AtomicBoolean shouldBatch = new AtomicBoolean(true);
 		private AtomicBoolean shouldHash = new AtomicBoolean(true);
 		private boolean connectionRecovery = true;
-		private WaitStrategy processingWaitStrategy = new SleepingWaitStrategy();
-		private WaitStrategy sendWaitStrategy = new SleepingWaitStrategy();
 		private List<ClientMonitor> monitors = new ArrayList<ClientMonitor>();
-
+		
 		public Builder addHost(String hostname, int port) {
 		
 			hosts.add(new HostInfo(hostname, port));
@@ -54,19 +51,7 @@ public class Client {
 			this.connectionsPerHost = connectionsPerHost;
 			return this;
 		}
-		
-		public Builder withProcessingBufferSize(int processingBufferSize) {
-			if (processingBufferSize < MIN_PROCESSING_BUFFER_SIZE) throw new IllegalArgumentException("Processing buffer size may not be smaller than "+MIN_PROCESSING_BUFFER_SIZE);
-			this.processingBufferSize = processingBufferSize;
-			return this;
-		}
-		
-		public Builder withSendBufferSize(int sendBufferSize) {
-			if (sendBufferSize < MIN_SENDING_BUFFER_SIZE) throw new IllegalArgumentException("Send buffer size may not be smaller than "+MIN_SENDING_BUFFER_SIZE);
-			this.sendBufferSize = sendBufferSize;
-			return this;			
-		}
-		
+
 		public Builder shouldBatch(boolean shouldBatch) {
 			this.shouldBatch.set(shouldBatch);
 			return this;
@@ -81,21 +66,10 @@ public class Client {
 			this.connectionRecovery = connectionRecovery;
 			return this;
 		}
-		
-		public Builder withProcessingWaitStrategy(WaitStrategy processingWaitStrategy) {
-			if (processingWaitStrategy == null) throw new IllegalArgumentException("Processing wait strategy may not be null");
-			this.processingWaitStrategy = processingWaitStrategy;
-			return this;
-		}
-		
-		public Builder withSendWaitStrategy(WaitStrategy sendWaitStrategy) {
-			if (sendWaitStrategy == null) throw new IllegalArgumentException("Send wait strategy may not be null");
-			this.sendWaitStrategy = sendWaitStrategy;
-			return this;
-		}
+
 		
 		public Client build() {
-			return new Client(hosts, connectionsPerHost, shouldBatch, shouldHash, connectionRecovery, processingWaitStrategy, processingBufferSize, sendWaitStrategy, sendBufferSize, monitors);
+			return new Client(hosts, connectionsPerHost, shouldBatch, shouldHash, connectionRecovery, monitors);
 		}
 		
 	}
@@ -127,12 +101,11 @@ public class Client {
 	protected final List<Host> hosts;
 	protected AtomicBoolean shouldBatch;
 	protected AtomicBoolean shouldHash;
-	protected final RingBuffer<RequestEvent> processingBuffer;
 	protected final List<ClientMonitor> monitors;
 	protected final boolean connectionRecovery;
-	protected ExecutorService processors = Executors.newFixedThreadPool(2);
+	private final HashFunction hasher = Hashing.murmur3_128();
 	
-	private Client(List<HostInfo> hosts, int connectionsPerHost, AtomicBoolean shouldBatch, AtomicBoolean shouldHash, boolean connectionRecovery, WaitStrategy processingWaitStrategy, int processingBufferSize, WaitStrategy sendWaitStrategy, int sendBufferSize, List<ClientMonitor> monitors) {
+	private Client(List<HostInfo> hosts, int connectionsPerHost, AtomicBoolean shouldBatch, AtomicBoolean shouldHash, boolean connectionRecovery, List<ClientMonitor> monitors) {
 
 		this.hosts = new ArrayList<Host>();
 		
@@ -142,8 +115,6 @@ public class Client {
 					.setHostInfo(hostInfo)
 					.forClient(this)
 					.connections(connectionsPerHost)
-					.withSendBufferSize(sendBufferSize)
-					.withSendWaitStrategy(sendWaitStrategy)
 					.build());
 		}
 		
@@ -151,20 +122,7 @@ public class Client {
 		this.shouldHash = shouldHash;
 		this.connectionRecovery = connectionRecovery;
 		this.monitors = monitors;
-		
-		// create processing buffer
-		processingBuffer = RingBuffer.createMultiProducer(RequestEvent.EVENT_FACTORY, processingBufferSize, processingWaitStrategy);
 
-		// create processors
-		BatchEventProcessor<RequestEvent> hasher = new BatchEventProcessor<RequestEvent>( processingBuffer, processingBuffer.newBarrier(), new RequestHasher(this, Hashing.murmur3_128()) );
-		BatchEventProcessor<RequestEvent> router = new BatchEventProcessor<RequestEvent>( processingBuffer, processingBuffer.newBarrier(hasher.getSequence()), new RequestRouter(this));
-		
-		// start processors
-		processors.execute(hasher);
-		processors.execute(router);
-		
-		processingBuffer.addGatingSequences(router.getSequence());
-		
 		
 	}
 	
@@ -183,9 +141,18 @@ public class Client {
 		}
 	}
 	
-	public PendingResponse send(Request request) {
+	public PendingResponse send(KeyedRequest request) throws NoConnectionsAvailableException {
+
+		if (shouldHash()) getHosts().get(Hashing.consistentHash(hasher.hashString(request.getKey()), getHosts().size())).send(request);		
+		getHosts().get(new Random().nextInt(getHosts().size())).send(request);
+			
+		return request.getResponse();
+	}
+	
+	public PendingResponse send(Request request) throws NoConnectionsAvailableException {
 		
-		processingBuffer.publishEvent(new RequestEvent.RequestEventTranslator(request));
+		getHosts().get(new Random().nextInt(getHosts().size())).send(request);
+		
 		return request.getResponse();
 		
 	}
@@ -196,6 +163,10 @@ public class Client {
 	
 	public boolean shouldHash() {
 		return shouldHash.get();
+	}
+	
+	public HashFunction getHasher() {
+		return hasher;
 	}
 	
 }
