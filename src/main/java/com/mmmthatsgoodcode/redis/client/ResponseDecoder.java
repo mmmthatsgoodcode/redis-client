@@ -28,7 +28,7 @@ public class ResponseDecoder extends ByteToMessageDecoder {
 			List<Object> out) throws Exception {
 		
 		// if there are readable bytes on the buffer - there should be..
-		while (in.readableBytes() >= 1) {
+		while (in.readableBytes() > 1) {
 			LOG.debug("Reading from index {}", in.readerIndex());
 			// first, find out what kind of response this is ( if the first byte is already available on the buffer - it should be )
 			if (currentResponse == null) {
@@ -37,28 +37,31 @@ public class ResponseDecoder extends ByteToMessageDecoder {
 			}
 
 			// decode contents from the buffer
-			if (currentResponse.decode() == true) {
+			if (currentResponse != null && currentResponse.decode() == true) {
 				// decoder finished
 				responses.add(currentResponse);
 				LOG.debug("Decoded response: {}", currentResponse.value());
+				currentResponse = null;
 
-				
+				LOG.debug("BUffer after decode: {}/{}", in.readerIndex(), in.readableBytes());
 				// see if we are done completely decoding the buffer
 				if (in.readableBytes() == 2 && in.forEachByte(ByteBufProcessor.FIND_CRLF) != -1) {
 					// last two bytes is a CRLF
 					LOG.debug("End of buffer");
-//					in.clear();
-
+					in.clear();
+					
 					ctx.fireChannelRead(responses);
 					return;
 
 				}
 				
-				// otherwise..
-				LOG.debug("Still {} bytes to go in buffer", in.readableBytes());
-				in.readerIndex(in.readerIndex()+2);
+				// there are still bytes in the buffer after decode, that are not CRLF
+				LOG.debug("Still {} bytes buffered to go..", in.readableBytes());
 				
-				currentResponse = null;
+				// skip the delimiter
+				if (in.readableBytes() > 2) in.readerIndex(in.readerIndex()+2);
+				else in.readerIndex(in.writerIndex());
+				
 
 			} else {
 

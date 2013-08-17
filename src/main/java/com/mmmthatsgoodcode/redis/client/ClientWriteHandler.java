@@ -21,10 +21,8 @@ public class ClientWriteHandler extends ChannelOutboundHandlerAdapter {
 		if (msg instanceof Request) {
 			Request request = (Request) msg;
 			ctx.channel().attr(Connection.OUTBOUND).get().add(request);
-			LOG.debug("Saved outbound request");
+			LOG.debug("Added pending request to Channel's outbound queue");
 			ctx.write(request);
-			
-			ctx.flush();
 			
 		}
 		

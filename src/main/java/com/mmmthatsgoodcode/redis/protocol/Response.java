@@ -106,7 +106,8 @@ public abstract class Response<T> extends Protocol {
 		if (hint == ResponseHintBytes.BULK) return new BulkResponse(in);
 		if (hint == ResponseHintBytes.MULTI) return new MultiBulkResponse(in);
 		
-		throw new IllegalArgumentException("Redis response "+new String(new byte[]{hint})+" not recognized");
+		LOG.debug("Redis response \"{}\" not recognized", new String(new byte[]{hint}));
+		return null;
 		
 		
 	}

@@ -42,7 +42,7 @@ import com.mmmthatsgoodcode.redis.protocol.Request;
 
 /**
  * Represents a single connection a RedisHost.
- * Buffers incoming requests on a RingBuffer
+ * Buffers outbound requests on a RingBuffer
  * @author andras
  *
  */

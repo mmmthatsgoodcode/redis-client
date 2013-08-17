@@ -31,6 +31,7 @@ public class RequestFulfiller extends ChannelInboundHandlerAdapter {
     		
     		if (msg instanceof List) {
     			List list = (List) msg;
+    			LOG.debug("Finalizing {} requests", ((List) msg).size());
     			for(Object obj:list) {
     				
     				Response response = (Response) obj;
@@ -42,6 +43,9 @@ public class RequestFulfiller extends ChannelInboundHandlerAdapter {
     	    			
     	    		}
     			}
+    			
+    			if (ctx.channel().attr(Connection.OUTBOUND).get().size() > 0) LOG.debug("{} requests still pending", ctx.channel().attr(Connection.OUTBOUND).get().size());
+    			list.clear();
     			
     		}
     		

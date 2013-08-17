@@ -20,7 +20,7 @@ public class RequestLogger extends ChannelOutboundHandlerAdapter {
 		
 		if (msg instanceof ByteBuf) {
 			ByteBuf out = (ByteBuf) msg;
-			LOG.debug("Outbound UTF8 encoded bytes\n{}", new String(UnpooledByteBufAllocator.DEFAULT.heapBuffer().writeBytes(out, 0, out.readableBytes()).array()));
+			LOG.debug("Outbound UTF8 encoded bytes\n:{}:", new String(UnpooledByteBufAllocator.DEFAULT.heapBuffer().writeBytes(out, 0, out.readableBytes()).array()));
 			
 		}
 		
