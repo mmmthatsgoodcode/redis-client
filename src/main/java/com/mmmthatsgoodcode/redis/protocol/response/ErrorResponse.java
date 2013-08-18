@@ -3,7 +3,6 @@ package com.mmmthatsgoodcode.redis.protocol.response;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufProcessor;
 
-import com.mmmthatsgoodcode.redis.Util;
 import com.mmmthatsgoodcode.redis.protocol.Response;
 
 public class ErrorResponse extends Response<String> {
