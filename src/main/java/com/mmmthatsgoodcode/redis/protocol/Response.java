@@ -49,6 +49,11 @@ public abstract class Response<T> extends Protocol {
 			return new ResponseValue();
 		}
 		
+		public String toString() {
+			if (set == false) return "pending";
+			return value.toString();
+		}
+		
 	}
 	
 	/**
@@ -68,6 +73,7 @@ public abstract class Response<T> extends Protocol {
 	
 	protected final ByteBuf in;
 	protected ResponseValue<T> value = ResponseValue.none();
+	protected Request request = null;
 	
 	public Response(ByteBuf in) {
 		this.in = in;
@@ -109,6 +115,18 @@ public abstract class Response<T> extends Protocol {
 		LOG.debug("Redis response \"{}\" not recognized", new String(new byte[]{hint}));
 		return null;
 		
+	}
+	
+	public void setRequest(Request request) {
+		this.request = request;
+	}
+	
+	public Request getRequest() {
+		return request;
+	}
+	
+	public String toString() {
+		return this.getClass().getSimpleName()+":"+value;
 		
 	}
 	

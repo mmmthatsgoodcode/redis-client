@@ -18,14 +18,20 @@ public class ClientWriteHandler extends ChannelOutboundHandlerAdapter {
 	@Override
 	public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
 		
-		if (msg instanceof Request) {
+		if (msg instanceof Transaction) {
+			Transaction transaction = (Transaction) msg;
+			for (Request request:transaction) {
+				ctx.channel().attr(Connection.OUTBOUND).get().add(request);
+				ctx.write(request);
+			}
+			
+		} else if (msg instanceof Request) {
 			Request request = (Request) msg;
 			ctx.channel().attr(Connection.OUTBOUND).get().add(request);
-			LOG.debug("Added pending request to Channel's outbound queue");
+			LOG.debug("Added pending request {} to Channel's outbound queue", request);
 			ctx.write(request);
 			
 		}
-		
 	}
 	
 }

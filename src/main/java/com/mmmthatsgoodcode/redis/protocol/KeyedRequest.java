@@ -1,6 +1,6 @@
 package com.mmmthatsgoodcode.redis.protocol;
 
-public abstract class KeyedRequest extends Request {
+public abstract class KeyedRequest<T extends Response> extends Request<T> {
 
 	protected final String key;
 	

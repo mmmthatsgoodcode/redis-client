@@ -4,13 +4,13 @@ import io.netty.buffer.ByteBuf;
 
 import com.mmmthatsgoodcode.redis.protocol.Request;
 import com.mmmthatsgoodcode.redis.protocol.Request.EncodeHelper;
-import com.mmmthatsgoodcode.redis.protocol.response.StatusResponse;
+import com.mmmthatsgoodcode.redis.protocol.response.MultiBulkResponse;
 
-public class Ping extends Request<StatusResponse> {
+public class Exec extends Request<MultiBulkResponse> {
 
-	public static final byte[] NAME = "PING".getBytes();
+	private static final byte[] NAME = "EXEC".getBytes(ENCODING);
 	
-	public Ping() {
+	public Exec() {
 		setArgc(1);
 	}
 	
@@ -25,6 +25,5 @@ public class Ping extends Request<StatusResponse> {
 	public byte[] getName() {
 		return NAME;
 	}
-
 
 }

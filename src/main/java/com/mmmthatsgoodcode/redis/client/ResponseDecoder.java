@@ -7,6 +7,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.mmmthatsgoodcode.redis.Protocol;
 import com.mmmthatsgoodcode.redis.protocol.Request;
 import com.mmmthatsgoodcode.redis.protocol.Response;
 
@@ -29,7 +30,7 @@ public class ResponseDecoder extends ByteToMessageDecoder {
 		
 		// if there are readable bytes on the buffer - there should be..
 		while (in.readableBytes() > 1) {
-			LOG.debug("Reading from index {}", in.readerIndex());
+			LOG.debug("Reading from index {} ( {} readable )", in.readerIndex(), in.readableBytes());
 			// first, find out what kind of response this is ( if the first byte is already available on the buffer - it should be )
 			if (currentResponse == null) {
 				currentResponse = Response.infer(in);
@@ -45,7 +46,7 @@ public class ResponseDecoder extends ByteToMessageDecoder {
 
 				LOG.debug("BUffer after decode: {}/{}", in.readerIndex(), in.readableBytes());
 				// see if we are done completely decoding the buffer
-				if (in.readableBytes() == 2 && in.forEachByte(ByteBufProcessor.FIND_CRLF) != -1) {
+				if (in.readableBytes() == Protocol.DELIMITER.length && in.forEachByte(Protocol.HAS_DELIMITER) != -1) {
 					// last two bytes is a CRLF
 					LOG.debug("End of buffer");
 					in.clear();
@@ -59,7 +60,7 @@ public class ResponseDecoder extends ByteToMessageDecoder {
 				LOG.debug("Still {} bytes buffered to go..", in.readableBytes());
 				
 				// skip the delimiter
-				if (in.readableBytes() > 2) in.readerIndex(in.readerIndex()+2);
+				if (in.readableBytes() > Protocol.DELIMITER.length) in.readerIndex(in.readerIndex()+Protocol.DELIMITER.length);
 				else in.readerIndex(in.writerIndex());
 				
 

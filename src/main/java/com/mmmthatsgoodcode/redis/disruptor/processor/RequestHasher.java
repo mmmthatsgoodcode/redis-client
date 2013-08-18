@@ -17,11 +17,9 @@ public class RequestHasher implements EventHandler<RequestEvent> {
 
 	private static final Logger LOG = LoggerFactory.getLogger(RequestHasher.class);
 	
-	private final HashFunction hasher;
 	private Client client;
 	
-	public RequestHasher(Client client, HashFunction hasher) {
-		this.hasher = hasher;
+	public RequestHasher(Client client) {
 		this.client = client;
 	}
 	
@@ -29,8 +27,8 @@ public class RequestHasher implements EventHandler<RequestEvent> {
 	public void onEvent(RequestEvent event, long sequence, boolean endOfBatch)
 			throws Exception {
 		if (client.shouldHash() && event.getRequest() instanceof KeyedRequest) {
-			event.setHash(hasher.hashString(((KeyedRequest) event.getRequest()).getKey()));
-			LOG.debug("Hashed! {} {}", event, (endOfBatch?"end":"cont"));
+			event.setHash(client.hashForKey(((KeyedRequest) event.getRequest()).getKey()));
+			LOG.debug("Hashed! {} {}", event, event.getHash());
 		}
 	}
 

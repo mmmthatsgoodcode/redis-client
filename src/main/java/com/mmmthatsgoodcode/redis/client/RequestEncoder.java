@@ -30,7 +30,7 @@ public class RequestEncoder extends MessageToByteEncoder<Request> {
 		if (msg.getArgc() > 0) helper.addArgc(msg.getArgc());
 		helper.buffer().writeBytes(buf);
 		buf.release();
-//		LOG.debug("Sent request {}, {}", msg, msg.getName()+" "+msg.getArgc());
+		LOG.debug("Sent request {}, {}", msg, msg.getName()+" "+msg.getArgc());
 		
 	}
 

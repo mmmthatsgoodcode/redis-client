@@ -6,7 +6,7 @@ import io.netty.buffer.ByteBuf;
 
 import com.mmmthatsgoodcode.redis.Protocol;
 
-public abstract class Request extends Protocol {
+public abstract class Request<T extends Response> extends Protocol {
 
 	public static class EncodeHelper {
 		
@@ -50,14 +50,22 @@ public abstract class Request extends Protocol {
 	
 	
 	protected int argc = 2;
-	protected PendingResponse response = new PendingResponse();
+	protected PendingResponse<T> response = new PendingResponse<T>(this);
 	public static final byte ARGC_BEGIN = "*".getBytes(ENCODING)[0];
 	public static final byte ARG_LENGTH_BEGIN = "$".getBytes(ENCODING)[0];
 	
 	
 	public abstract ByteBuf encode(); 
 	public abstract byte[] getName();
-	public abstract boolean canPipe();
+	
+	/**
+	 * Called by PendingResponse.fulfill() before the semaphore is returned.
+	 * Allows for the Request to perform processing on the Response before it is made available to any client
+	 * waiting on PendingResponse.get()
+	 */
+	public void responseReceived(T response) {
+		response.setRequest(this);
+	}
 	
 	public int getArgc() {
 		return argc;
@@ -67,11 +75,9 @@ public abstract class Request extends Protocol {
 		this.argc = argc;
 	}
 	
-	public PendingResponse getResponse() {
+	public PendingResponse<T> getResponse() {
 		return this.response;
 	}
-	
-	
 	
 	
 }

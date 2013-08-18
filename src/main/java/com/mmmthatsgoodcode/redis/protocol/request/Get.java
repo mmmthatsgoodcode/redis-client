@@ -4,8 +4,9 @@ import io.netty.buffer.ByteBuf;
 
 import com.mmmthatsgoodcode.redis.protocol.KeyedRequest;
 import com.mmmthatsgoodcode.redis.protocol.Request;
+import com.mmmthatsgoodcode.redis.protocol.response.BulkResponse;
 
-public class Get extends KeyedRequest {
+public class Get extends KeyedRequest<BulkResponse> {
 
 	public static final byte[] NAME = "GET".getBytes();
 	
@@ -27,10 +28,6 @@ public class Get extends KeyedRequest {
 	public byte[] getName() {
 		return NAME;
 	}
-	
-	@Override
-	public boolean canPipe() {
-		return true;
-	}
+
 
 }

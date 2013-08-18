@@ -6,11 +6,11 @@ import com.mmmthatsgoodcode.redis.protocol.Request;
 import com.mmmthatsgoodcode.redis.protocol.Request.EncodeHelper;
 import com.mmmthatsgoodcode.redis.protocol.response.StatusResponse;
 
-public class Ping extends Request<StatusResponse> {
+public class Multi extends Request<StatusResponse> {
 
-	public static final byte[] NAME = "PING".getBytes();
+	private static final byte[] NAME = "MULTI".getBytes(ENCODING);
 	
-	public Ping() {
+	public Multi() {
 		setArgc(1);
 	}
 	
@@ -25,6 +25,5 @@ public class Ping extends Request<StatusResponse> {
 	public byte[] getName() {
 		return NAME;
 	}
-
 
 }

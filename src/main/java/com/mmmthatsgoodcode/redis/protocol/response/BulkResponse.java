@@ -29,18 +29,20 @@ public class BulkResponse extends Response<String> {
 	 */
 	@Override
 	public boolean decode() {
+		
+		// wait for a delimiter to come
 		if (this.in.forEachByte(ByteBufProcessor.FIND_CRLF) != -1) {
 			
 			if (currentBytesExpected == 0) {
-				LOG.debug("Parsing from index {}/{}", in.readerIndex(), in.readableBytes());
+				LOG.debug("Starting from index {} ( {} readable )", in.readerIndex(), in.readableBytes());
 	
-				LOG.debug("trying to decode {}", new String(UnpooledByteBufAllocator.DEFAULT.heapBuffer().writeBytes(in, in.readerIndex(), in.readableBytes()).array()));
+//				LOG.debug("trying to decode {}", new String(UnpooledByteBufAllocator.DEFAULT.heapBuffer().writeBytes(in, in.readerIndex(), in.readableBytes()).array()));
 				
 				// so, there is at least one delimiter here, but do we have attribute length + 2 more bytes to read?
-				byte[] attrLength = this.in.readBytes( this.in.forEachByte(ByteBufProcessor.FIND_CRLF) - this.in.readerIndex() ).array();
+				byte[] attrLength = this.in.readBytes( this.in.forEachByte(HAS_DELIMITER) - this.in.readerIndex() ).array();
 				currentBytesExpected = Integer.valueOf( new String(attrLength) ); 
 			}
-			LOG.debug("bytesExpected {}", currentBytesExpected);
+			LOG.debug("Expecting {} bytes", currentBytesExpected);
 			
 			if (currentBytesExpected == -1) {
 				// no result
@@ -48,9 +50,11 @@ public class BulkResponse extends Response<String> {
 
 				setValue(null);
 				return true; // done with this response
-			} else if (this.in.readableBytes() >= currentBytesExpected+4) { // there should be 2x delimiters in here, plus the content
+			} else if (this.in.readableBytes() >= currentBytesExpected+(DELIMITER.length*2)) { // there should be 2x delimiters in here, plus the content
+				LOG.debug("There are sufficient bytes in this buffer to finish decoding");
 				// we have the remainder of the response in this buffer. Finish reading.
-				byte[] attribute = this.in.readBytes(currentBytesExpected+2).array();
+				this.in.readerIndex(this.in.readerIndex()+DELIMITER.length); // move reader index beyond the CRLF
+				byte[] attribute = this.in.readBytes(currentBytesExpected).array();
 				currentBytesExpected = 0;
 
 				setValue(new String(attribute));

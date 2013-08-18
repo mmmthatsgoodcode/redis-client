@@ -8,8 +8,16 @@ import io.netty.buffer.PooledByteBufAllocator;
 
 public abstract class Protocol {
 	
-	protected static final Charset ENCODING = Charset.forName("UTF-8");
+	// a ByteBufProcessor that finds delimiters
+	public static final ByteBufProcessor HAS_DELIMITER = ByteBufProcessor.FIND_CRLF;
+	
+	// Character encoding
+	public static final Charset ENCODING = Charset.forName("UTF-8");
+	
+	// Request delimiter
 	public static final byte[] DELIMITER = "\r\n".getBytes(ENCODING);
+	
+	// Allocator to grab buffers from
 	protected static ByteBufAllocator byteBufAllocator = new PooledByteBufAllocator();
 	
 	

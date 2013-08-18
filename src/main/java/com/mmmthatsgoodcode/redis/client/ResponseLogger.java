@@ -17,14 +17,13 @@ public class ResponseLogger extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
     	
-		if (msg instanceof ByteBuf) {
+		if (LOG.isDebugEnabled() && msg instanceof ByteBuf) {
 			ByteBuf out = (ByteBuf) msg;
 			LOG.debug("Inbound UTF8 decoded bytes\n{}", new String(UnpooledByteBufAllocator.DEFAULT.heapBuffer().writeBytes(out, 0, out.readableBytes()).array()));
 			
 		}
 		
 		ctx.fireChannelRead(msg);
-
 	
 	}
 	

@@ -23,20 +23,19 @@ public class LoggingMonitor implements ClientMonitor {
 
 	@Override
 	public void connectionFailed(Connection connection, Throwable cause) {
-		LOG.debug("Connection {} failed because {}", connection, cause);
-
+		LOG.warn("Connection {} failed because {}", connection, cause);
 
 	}
 
 	@Override
 	public void connectionLost(Connection connection, Throwable cause) {
-		LOG.debug("Connection {} lost because {}", connection, cause);
+		LOG.warn("Connection {} lost because {}", connection, cause);
 
 	}
 
 	@Override
 	public void connected(Connection connection) {
-		LOG.debug("Connection {} estabilished", connection);
+		LOG.debug("Connection {} established", connection);
 		
 	}
 

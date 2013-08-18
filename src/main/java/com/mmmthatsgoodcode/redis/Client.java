@@ -1,41 +1,52 @@
 package com.mmmthatsgoodcode.redis;
 
+import io.netty.channel.ChannelOption;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.google.common.hash.HashCode;
+import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.lmax.disruptor.BatchEventProcessor;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.SleepingWaitStrategy;
 import com.lmax.disruptor.WaitStrategy;
 import com.mmmthatsgoodcode.redis.Host.Builder;
+import com.mmmthatsgoodcode.redis.client.Transaction;
 import com.mmmthatsgoodcode.redis.disruptor.processor.RequestEvent;
 import com.mmmthatsgoodcode.redis.disruptor.processor.RequestHasher;
 import com.mmmthatsgoodcode.redis.disruptor.processor.RequestRouter;
+import com.mmmthatsgoodcode.redis.disruptor.processor.RequestEvent.RequestEventTranslator;
+import com.mmmthatsgoodcode.redis.protocol.KeyedRequest;
 import com.mmmthatsgoodcode.redis.protocol.PendingResponse;
 import com.mmmthatsgoodcode.redis.protocol.Request;
+import com.mmmthatsgoodcode.redis.protocol.Response;
+import com.mmmthatsgoodcode.redis.protocol.request.Exec;
+import com.mmmthatsgoodcode.redis.protocol.response.MultiBulkResponse;
 
 public class Client {
 
 	public static class Builder {
 		
 		public final static int MIN_PROCESSING_BUFFER_SIZE = 2*Runtime.getRuntime().availableProcessors();
-		public final static int MIN_SENDING_BUFFER_SIZE = 2*Runtime.getRuntime().availableProcessors();
 		
 		private int connectionsPerHost = 1;
 		private int processingBufferSize = 1024;
-		private int sendBufferSize = 1024;
 		private List<HostInfo> hosts = new ArrayList<HostInfo>();
-		private AtomicBoolean shouldBatch = new AtomicBoolean(true);
 		private AtomicBoolean shouldHash = new AtomicBoolean(true);
 		private boolean connectionRecovery = true;
 		private WaitStrategy processingWaitStrategy = new SleepingWaitStrategy();
-		private WaitStrategy sendWaitStrategy = new SleepingWaitStrategy();
 		private List<ClientMonitor> monitors = new ArrayList<ClientMonitor>();
-
+		private Map<ChannelOption, Object> channelOptions = new HashMap<ChannelOption, Object>();
+		private HashFunction hashFunction = Hashing.murmur3_128();
+		private AtomicBoolean withTrafficLogging = new AtomicBoolean(false);
+		
 		public Builder addHost(String hostname, int port) {
 		
 			hosts.add(new HostInfo(hostname, port));
@@ -61,17 +72,6 @@ public class Client {
 			return this;
 		}
 		
-		public Builder withSendBufferSize(int sendBufferSize) {
-			if (sendBufferSize < MIN_SENDING_BUFFER_SIZE) throw new IllegalArgumentException("Send buffer size may not be smaller than "+MIN_SENDING_BUFFER_SIZE);
-			this.sendBufferSize = sendBufferSize;
-			return this;			
-		}
-		
-		public Builder shouldBatch(boolean shouldBatch) {
-			this.shouldBatch.set(shouldBatch);
-			return this;
-		}
-		
 		public Builder shouldHash(boolean shouldHash) {
 			this.shouldHash.set(shouldHash);
 			return this;
@@ -88,14 +88,27 @@ public class Client {
 			return this;
 		}
 		
-		public Builder withSendWaitStrategy(WaitStrategy sendWaitStrategy) {
-			if (sendWaitStrategy == null) throw new IllegalArgumentException("Send wait strategy may not be null");
-			this.sendWaitStrategy = sendWaitStrategy;
+		public Builder withHashFunction(HashFunction hashFunction) {
+			this.hashFunction = hashFunction;
+			return this;
+		}
+
+		public Builder withTrafficLogging(boolean withTrafficLogging) {
+			this.withTrafficLogging.set(withTrafficLogging);
+			return this;
+		}
+		
+		public <T> Builder withChannelOption(ChannelOption<T> channelOption, T value) {
+			channelOptions.put(channelOption, value);			
 			return this;
 		}
 		
 		public Client build() {
-			return new Client(hosts, connectionsPerHost, shouldBatch, shouldHash, connectionRecovery, processingWaitStrategy, processingBufferSize, sendWaitStrategy, sendBufferSize, monitors);
+			// add some default channel options
+			if (!channelOptions.containsKey(ChannelOption.SO_KEEPALIVE)) channelOptions.put(ChannelOption.SO_KEEPALIVE, true);
+			if (!channelOptions.containsKey(ChannelOption.CONNECT_TIMEOUT_MILLIS)) channelOptions.put(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000);
+			
+			return new Client(hosts, hashFunction, connectionsPerHost, channelOptions, shouldHash, connectionRecovery, processingWaitStrategy, processingBufferSize, monitors, withTrafficLogging);
 		}
 		
 	}
@@ -125,30 +138,31 @@ public class Client {
 	}
 
 	protected final List<Host> hosts;
-	protected AtomicBoolean shouldBatch;
 	protected AtomicBoolean shouldHash;
+	protected AtomicBoolean trafficLogging;
 	protected final RingBuffer<RequestEvent> processingBuffer;
 	protected final List<ClientMonitor> monitors;
 	protected final boolean connectionRecovery;
 	protected ExecutorService processors = Executors.newFixedThreadPool(2);
-	
-	private Client(List<HostInfo> hosts, int connectionsPerHost, AtomicBoolean shouldBatch, AtomicBoolean shouldHash, boolean connectionRecovery, WaitStrategy processingWaitStrategy, int processingBufferSize, WaitStrategy sendWaitStrategy, int sendBufferSize, List<ClientMonitor> monitors) {
+	protected final HashFunction hashFunction;
+
+	private Client(List<HostInfo> hosts, HashFunction hashFunction, int connectionsPerHost, Map<ChannelOption, Object> channelOptions, AtomicBoolean shouldHash, boolean connectionRecovery, WaitStrategy processingWaitStrategy, int processingBufferSize, List<ClientMonitor> monitors, AtomicBoolean trafficLogging) {
 
 		this.hosts = new ArrayList<Host>();
+		this.hashFunction = hashFunction;
 		
 		for (HostInfo hostInfo:hosts) {
 			this.hosts.add(
 					new Host.Builder()
 					.setHostInfo(hostInfo)
 					.forClient(this)
-					.connections(connectionsPerHost)
-					.withSendBufferSize(sendBufferSize)
-					.withSendWaitStrategy(sendWaitStrategy)
+					.createConnections(connectionsPerHost)
+					.withChannelOptions(channelOptions)
 					.build());
 		}
 		
-		this.shouldBatch = shouldBatch;
 		this.shouldHash = shouldHash;
+		this.trafficLogging = trafficLogging;
 		this.connectionRecovery = connectionRecovery;
 		this.monitors = monitors;
 		
@@ -156,7 +170,7 @@ public class Client {
 		processingBuffer = RingBuffer.createMultiProducer(RequestEvent.EVENT_FACTORY, processingBufferSize, processingWaitStrategy);
 
 		// create processors
-		BatchEventProcessor<RequestEvent> hasher = new BatchEventProcessor<RequestEvent>( processingBuffer, processingBuffer.newBarrier(), new RequestHasher(this, Hashing.murmur3_128()) );
+		BatchEventProcessor<RequestEvent> hasher = new BatchEventProcessor<RequestEvent>( processingBuffer, processingBuffer.newBarrier(), new RequestHasher(this ) );
 		BatchEventProcessor<RequestEvent> router = new BatchEventProcessor<RequestEvent>( processingBuffer, processingBuffer.newBarrier(hasher.getSequence()), new RequestRouter(this));
 		
 		// start processors
@@ -183,19 +197,45 @@ public class Client {
 		}
 	}
 	
-	public PendingResponse send(Request request) {
+	public <T extends Response> PendingResponse<T> send(Request<T> request) {
 		
 		processingBuffer.publishEvent(new RequestEvent.RequestEventTranslator(request));
 		return request.getResponse();
 		
 	}
 	
-	public boolean shouldBatch() {
-		return shouldBatch.get();
+	public PendingResponse<MultiBulkResponse> send(Transaction transaction) {
+		
+		// close transaction with EXEC
+		Exec exec = new Exec();
+		transaction.add(exec);
+		
+		processingBuffer.publishEvent(new RequestEvent.RequestEventTranslator(transaction));
+		return exec.getResponse();
+		
+	}
+	
+	public Host hostForKey(String key) {
+		if (shouldHash()) return hostForHash(hashForKey(key));
+		return null;
+	}
+
+	public HashCode hashForKey(String key) {
+		if (shouldHash()) return hashFunction.hashString(key);
+		return null;
+	}
+	
+	public Host hostForHash(HashCode hash) {
+		if (shouldHash()) return getHosts().get(Hashing.consistentHash(hash, getHosts().size()));
+		return null;
 	}
 	
 	public boolean shouldHash() {
 		return shouldHash.get();
+	}
+	
+	public boolean trafficLogging() {
+		return trafficLogging.get();
 	}
 	
 }

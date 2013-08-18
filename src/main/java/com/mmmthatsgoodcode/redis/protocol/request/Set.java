@@ -4,8 +4,9 @@ import io.netty.buffer.ByteBuf;
 
 import com.mmmthatsgoodcode.redis.protocol.KeyedRequest;
 import com.mmmthatsgoodcode.redis.protocol.Request;
+import com.mmmthatsgoodcode.redis.protocol.response.StatusResponse;
 
-public class Set extends KeyedRequest {
+public class Set extends KeyedRequest<StatusResponse> {
 
 	private static final byte[] NAME = "SET".getBytes(ENCODING);
 	private byte[] value;
@@ -23,9 +24,9 @@ public class Set extends KeyedRequest {
 	@Override
 	public ByteBuf encode() {
 		EncodeHelper out = new EncodeHelper(byteBufAllocator.buffer());
-		out.addArg(NAME);
-		out.addArg(key.getBytes(ENCODING));
-		out.addArg(value);
+		out.addArg(getName());
+		out.addArg(getKey().getBytes(ENCODING));
+		out.addArg(getValue());
 
 		return out.buffer();
 	}
@@ -35,9 +36,9 @@ public class Set extends KeyedRequest {
 		return NAME;
 	}
 	
-	@Override
-	public boolean canPipe() {
-		return true;
+	public byte[] getValue() {
+		return value;
 	}
+
 
 }

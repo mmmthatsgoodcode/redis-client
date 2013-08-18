@@ -8,18 +8,26 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class PendingResponse implements Future {
+public class PendingResponse<T extends Response> implements Future<T> {
 
-	private Semaphore lock = new Semaphore(1);
-	private Response response = null;
+	protected Semaphore lock = new Semaphore(1);
+	protected T response = null;
+	protected final Request<T> request;
 	
-	public PendingResponse() {
+	public PendingResponse(Request<T> request) {
+		this.request = request;
 		this.lock.acquireUninterruptibly();
 		
 	}
 	
-	public void finalize(Response response) {
+	/**
+	 * Notify Request of the received Response, release semaphore
+	 * @param response
+	 */
+	public final void finalize(T response) {
 		this.response = response;
+		this.request.responseReceived(this.response);
+
 		this.lock.release();
 	}
 	
@@ -42,7 +50,7 @@ public class PendingResponse implements Future {
 	}
 	
 	@Override
-	public Response get() {
+	public T get() {
 		try {
 			this.lock.acquire();
 			return response;
@@ -52,10 +60,14 @@ public class PendingResponse implements Future {
 	}
 
 	@Override
-	public Response get(long timeout, TimeUnit unit)
+	public T get(long timeout, TimeUnit unit)
 			throws InterruptedException, ExecutionException, TimeoutException {
 		if (this.lock.tryAcquire(timeout, unit) == true) return response;
 		throw new TimeoutException();
+	}
+	
+	public Request<T> getRequest() {
+		return request;
 	}
 
 }

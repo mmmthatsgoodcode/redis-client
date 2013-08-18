@@ -18,7 +18,8 @@ public class RequestLogger extends ChannelOutboundHandlerAdapter {
 	@Override
 	public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
 		
-		if (msg instanceof ByteBuf) {
+		
+		if (LOG.isDebugEnabled() && msg instanceof ByteBuf) {
 			ByteBuf out = (ByteBuf) msg;
 			LOG.debug("Outbound UTF8 encoded bytes\n:{}:", new String(UnpooledByteBufAllocator.DEFAULT.heapBuffer().writeBytes(out, 0, out.readableBytes()).array()));
 			

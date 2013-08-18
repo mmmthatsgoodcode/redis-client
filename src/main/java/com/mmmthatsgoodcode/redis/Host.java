@@ -1,8 +1,12 @@
 package com.mmmthatsgoodcode.redis;
 
+import io.netty.channel.ChannelOption;
+
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 
@@ -25,6 +29,7 @@ public class Host {
 		private Client client;
 		private int sendBufferSize = 1024;
 		private WaitStrategy sendWaitStrategy;
+		private Map<ChannelOption, Object> channelOptions = new HashMap<ChannelOption, Object>();
 		
 		public Builder forClient(Client client) {
 			if (client == null) throw new IllegalArgumentException("Client may not be null");
@@ -38,33 +43,27 @@ public class Host {
 			return this;
 		}
 
-		public Builder connections(int connections) {
+		public Builder createConnections(int connections) {
 			if (connections < 1) throw new IllegalArgumentException("Need to estabilish at least 1 connection..");
 			this.numConnections = connections;
 			return this;
 		}
 		
-		public Builder withSendBufferSize(int sendBufferSize) {
-			if (sendBufferSize < Client.Builder.MIN_SENDING_BUFFER_SIZE) throw new IllegalArgumentException("Send buffer size may not be smaller than "+Client.Builder.MIN_SENDING_BUFFER_SIZE);
-			this.sendBufferSize = sendBufferSize;
+		public Builder withChannelOptions(Map<ChannelOption, Object> channelOptions) {
+			if (channelOptions == null) throw new IllegalArgumentException("ChannelOptions may not be null");
+			this.channelOptions = channelOptions;
+			
 			return this;
-		}
-		
-		public Builder withSendWaitStrategy(WaitStrategy sendWaitStrategy) {
-			if (sendWaitStrategy == null) throw new IllegalArgumentException("Send wait strategy may not be null");
-			this.sendWaitStrategy = sendWaitStrategy;
-			return this;			
 		}
 		
 		public Host build() {
 			
 			forClient(client);
-			withSendBufferSize(sendBufferSize);
 			
 			Host host = new Host(client, hostInfo);
 			
 			for(int c=1; c<=numConnections; c++) {
-				host.createConnection(sendWaitStrategy, sendBufferSize);
+				host.createConnection(channelOptions);
 			}
 			
 			return host;		
@@ -85,8 +84,8 @@ public class Host {
 		this.hostInfo = hostInfo;
 	}
 	
-	protected void createConnection(WaitStrategy sendWaitStrategy, int sendBufferSize) {
-		connections.add(new Connection(this, sendWaitStrategy, sendBufferSize ));
+	protected void createConnection(Map<ChannelOption, Object> channelOptions) {
+		connections.add(new Connection(this, channelOptions));
 	}
 	
 	public Client getClient() {
@@ -101,7 +100,7 @@ public class Host {
 		return hostInfo.toString();
 	}
 	
-	public void schedule(Request request) throws NoConnectionsAvailableException {
+	public void send(Request request) throws NoConnectionsAvailableException {
 		LOG.debug("Incoming Request {}", request);
 		if (connections.size() == 0) {
 			LOG.error("Attempted to schedule request {} with no Connections available!");
@@ -127,7 +126,7 @@ public class Host {
 		}
 		
 		LOG.debug("Selected connection {}", selectedConnection);
-		selectedConnection.schedule(request);
+		selectedConnection.send(request);
 
 		
 	}
