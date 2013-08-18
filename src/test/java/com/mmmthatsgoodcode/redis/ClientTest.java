@@ -20,6 +20,7 @@ import static org.junit.Assert.*;
 
 import com.codahale.metrics.Timer;
 import com.codahale.metrics.Timer.Context;
+import com.google.common.hash.Hashing;
 import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.BusySpinWaitStrategy;
 import com.lmax.disruptor.SleepingWaitStrategy;
@@ -49,7 +50,7 @@ public class ClientTest {
 		.addMonitor(new LoggingMonitor())
 		.withTrafficLogging(true)
 		.shouldHash(true)
-		.withHashFunction(new RedisClientMurmurHash())
+		.withHashFunction(Hashing.murmur3_128())
 		.withProcessingBufferSize(1024)
 		.withProcessingWaitStrategy(new BlockingWaitStrategy())
 		.withConnectionsPerHost(4)

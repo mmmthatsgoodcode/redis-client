@@ -1,0 +1,62 @@
+***Attention***
+
+This is not feature-complete, it will be in 1.0, Until then, refer to the CHANGELOG below to find out if it's useful for you or not.
+
+# MTGC Redis-Client
+
+..is a netty4/disruptor backed Redis client made for high availability, low  latency and ease of use.
+
+## Design goals
+
+
+- **High availability**: extendible monitoring interface - ships with "connection recovery" & "mbeans-exported client health & stats" impementations. Quickly recover from losing connections and keep you and your monitoring systems up to date on the state of the client.
+- **Low latency**: makes use of the LMAX disruptor to paralellize pre-processing on Requests and present a single-writer to the nio client Channel
+- **Ease of use**: Public Fluent APIs wherever possible
+
+
+## CHANGELOG
+
+_fill me in_
+
+## Code
+```
+// Create a Client
+Client client = new Client.Builder()
+				.addHost("127.0.0.1", 6379)
+				.addHost("127.0.0.1", 6380)
+				.addMonitor(new LoggingMonitor())
+				.withTrafficLogging(true)
+				.shouldHash(true)
+				.withHashFunction(Hashing.murmur3_128())
+				.withProcessingBufferSize(1024)
+				.withProcessingWaitStrategy(new BlockingWaitStrategy())
+				.withConnectionsPerHost(4)
+				.withTrafficLogging(true)
+				.build();
+				
+// Connect it up
+client.connect();
+
+// Send a request
+client.send(new Set("Foo", "Bar")).get(new Runnable() {
+
+	public void run() {
+		String v = client.send(new Get("Foo")).get(5, TimeUnit.MILLISECONDS);
+		
+		client.send(new Watch("Foo")); // single-keyed commands are automatically hashed
+		
+		List<Response> r = client.send(new Transaction()
+					.pin(client.hostForKey("Foo"))
+					.add(new Setex("Foo", v+" ?!", 3600)))).get(10, TimeUnit.MILLISECONDS)
+					
+		if (r.size() == 0) System.err.println("Transaction aborted!")
+					
+	}
+
+});
+
+
+
+				
+```
+
