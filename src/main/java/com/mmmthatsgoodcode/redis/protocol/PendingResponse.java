@@ -1,6 +1,7 @@
 package com.mmmthatsgoodcode.redis.protocol;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -13,11 +14,17 @@ public class PendingResponse<T extends Response> implements Future<T> {
 	protected Semaphore lock = new Semaphore(1);
 	protected T response = null;
 	protected final Request<T> request;
+	private List<Runnable> onCompleteCallbacks = new ArrayList<Runnable>();
 	
+
 	public PendingResponse(Request<T> request) {
 		this.request = request;
 		this.lock.acquireUninterruptibly();
 		
+	}
+	
+	public void onComplete(Runnable...onComplete) {
+		this.onCompleteCallbacks.addAll(Arrays.asList(onComplete));
 	}
 	
 	/**
@@ -27,7 +34,9 @@ public class PendingResponse<T extends Response> implements Future<T> {
 	public final void finalize(T response) {
 		this.response = response;
 		this.request.responseReceived(this.response);
-
+		for (Runnable onComplete:onCompleteCallbacks) {
+			onComplete.run();
+		}
 		this.lock.release();
 	}
 	

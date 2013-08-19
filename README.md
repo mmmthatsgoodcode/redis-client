@@ -16,7 +16,15 @@ This is not feature-complete, it will be in 1.0, Until then, refer to the CHANGE
 
 ## CHANGELOG
 
-_fill me in_
+### 0.1-SNAPSHOT
+[19/08/2013]
+
+
+- requests supported: Set, Setx, Setnx, Exists, Get, Watch, Multi, Exec, Ping
+- Transaction support: a sequence of requests sent as a single request on the same connection ( pin-able, see below ), prefixed automatically with MULTI and EXEC
+- no connection-state management ( needs to be implemented in client.monitor.SelfHealingMonitor )
+- little Javadoc
+- rudimentary tests
 
 ## Code
 ```
@@ -38,7 +46,7 @@ Client client = new Client.Builder()
 client.connect();
 
 // Send a request
-client.send(new Set("Foo", "Bar")).get(new Runnable() {
+client.send(new Set("Foo", "Bar"), new Runnable() {
 
 	public void run() {
 		String v = client.send(new Get("Foo")).get(5, TimeUnit.MILLISECONDS);
@@ -53,7 +61,7 @@ client.send(new Set("Foo", "Bar")).get(new Runnable() {
 					
 	}
 
-});
+}).get(10, TimeUnit.MILLISECONDS);
 
 
 

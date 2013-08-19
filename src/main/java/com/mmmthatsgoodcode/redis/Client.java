@@ -197,11 +197,21 @@ public class Client {
 		}
 	}
 	
+	public <T extends Response> PendingResponse<T> send(Request<T> request, Runnable...onComplete) {
+		request.getResponse().onComplete(onComplete);
+		return send(request);
+	}
+	
 	public <T extends Response> PendingResponse<T> send(Request<T> request) {
 		
 		processingBuffer.publishEvent(new RequestEvent.RequestEventTranslator(request));
 		return request.getResponse();
 		
+	}
+	
+	public PendingResponse<MultiBulkResponse> send(Transaction transaction, Runnable...onComplete) {
+		transaction.getResponse().onComplete(onComplete);
+		return send(transaction);
 	}
 	
 	public PendingResponse<MultiBulkResponse> send(Transaction transaction) {
