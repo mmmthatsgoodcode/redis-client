@@ -7,14 +7,14 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufProcessor;
 import io.netty.buffer.UnpooledByteBufAllocator;
 
-import com.mmmthatsgoodcode.redis.protocol.Response;
+import com.mmmthatsgoodcode.redis.protocol.AbstractResponse;
 
 /**
  * This should contain a single, arbitary-length incoming parameter as specified by ${length}DELIMITER
  * @author aszerdahelyi
  *
  */
-public class BulkResponse extends Response<String> {
+public class BulkResponse extends AbstractResponse<String> {
 
 	private static final Logger LOG = LoggerFactory.getLogger(BulkResponse.class);
 	private int currentBytesExpected = 0; // how many bytes we are waiting to become available in this buffer

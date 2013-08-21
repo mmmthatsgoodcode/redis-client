@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import com.mmmthatsgoodcode.redis.Connection;
 import com.mmmthatsgoodcode.redis.protocol.Request;
-import com.mmmthatsgoodcode.redis.protocol.Response;
+import com.mmmthatsgoodcode.redis.protocol.AbstractResponse;
 
 import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandlerContext;
@@ -25,17 +25,22 @@ public class RequestFulfiller extends ChannelInboundHandlerAdapter {
 	
 	private static final Logger LOG = LoggerFactory.getLogger(RequestFulfiller.class);
 	
+	/**
+	 * This is waiting for ResponseDecoder to pass a list of complete Responses down to it
+	 */
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
     	
     		
     		if (msg instanceof List) {
+    			
     			List list = (List) msg;
     			LOG.debug("Finalizing {} requests", ((List) msg).size());
     			for(Object obj:list) {
     				
-    				Response response = (Response) obj;
+    				AbstractResponse response = (AbstractResponse) obj;
     				
+    				// the assumption here is, Redis is sending responses in the order of requests sent
     				Request request = ctx.channel().attr(Connection.OUTBOUND).get().poll();
     	    		if (request != null) {
     					request.getResponse().finalize(response);
@@ -48,9 +53,15 @@ public class RequestFulfiller extends ChannelInboundHandlerAdapter {
     			list.clear();
     			
     		}
-    		
-    		
-    		
+    	
+    }
+    
+    @Override
+	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    	
+    	LOG.warn("?!");
+    	Connection connection = ctx.channel().attr(Connection.CONNECTION).get();
+    	if (connection != null) connection.discard(cause);
     	
     }
 	

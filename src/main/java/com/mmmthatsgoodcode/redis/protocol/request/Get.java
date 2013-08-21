@@ -3,7 +3,7 @@ package com.mmmthatsgoodcode.redis.protocol.request;
 import io.netty.buffer.ByteBuf;
 
 import com.mmmthatsgoodcode.redis.protocol.KeyedRequest;
-import com.mmmthatsgoodcode.redis.protocol.Request;
+import com.mmmthatsgoodcode.redis.protocol.AbstractRequest;
 import com.mmmthatsgoodcode.redis.protocol.response.BulkResponse;
 
 public class Get extends KeyedRequest<BulkResponse> {

@@ -3,7 +3,7 @@ package com.mmmthatsgoodcode.redis.client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.mmmthatsgoodcode.redis.protocol.Request;
+import com.mmmthatsgoodcode.redis.protocol.AbstractRequest;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;

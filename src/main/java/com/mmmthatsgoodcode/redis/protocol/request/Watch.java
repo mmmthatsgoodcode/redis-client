@@ -10,11 +10,11 @@ import io.netty.buffer.ByteBuf;
 import com.mmmthatsgoodcode.redis.Host;
 import com.mmmthatsgoodcode.redis.protocol.KeyedRequest;
 import com.mmmthatsgoodcode.redis.protocol.PinnedRequest;
-import com.mmmthatsgoodcode.redis.protocol.Request;
-import com.mmmthatsgoodcode.redis.protocol.Request.EncodeHelper;
+import com.mmmthatsgoodcode.redis.protocol.AbstractRequest;
+import com.mmmthatsgoodcode.redis.protocol.AbstractRequest.EncodeHelper;
 import com.mmmthatsgoodcode.redis.protocol.response.StatusResponse;
 
-public class Watch extends Request<StatusResponse> implements PinnedRequest {
+public class Watch extends AbstractRequest<StatusResponse> implements PinnedRequest<StatusResponse> {
 
 	private static final byte[] NAME = "WATCH".getBytes(ENCODING);
 	private final String[] keys;

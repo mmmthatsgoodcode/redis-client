@@ -3,9 +3,9 @@ package com.mmmthatsgoodcode.redis.protocol.response;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufProcessor;
 
-import com.mmmthatsgoodcode.redis.protocol.Response;
+import com.mmmthatsgoodcode.redis.protocol.AbstractResponse;
 
-public class IntegerResponse extends Response<Integer> {
+public class IntegerResponse extends AbstractResponse<Integer> {
 
 	public IntegerResponse(ByteBuf in) {
 		super(in);

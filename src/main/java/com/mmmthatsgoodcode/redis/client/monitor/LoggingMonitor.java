@@ -12,7 +12,7 @@ public class LoggingMonitor implements ClientMonitor {
 	
 	@Override
 	public void connectionCreated(Connection connection) {
-		LOG.debug("Created Connection {}", connection);
+		LOG.warn("Created Connection {}", connection);
 	}
 
 	@Override
@@ -35,7 +35,13 @@ public class LoggingMonitor implements ClientMonitor {
 
 	@Override
 	public void connected(Connection connection) {
-		LOG.debug("Connection {} established", connection);
+		LOG.warn("Connection {} established", connection);
+		
+	}
+
+	@Override
+	public void connectionDiscarded(Connection connection, Throwable cause) {
+		// TODO Auto-generated method stub
 		
 	}
 

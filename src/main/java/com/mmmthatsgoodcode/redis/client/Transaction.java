@@ -10,20 +10,21 @@ import io.netty.buffer.ByteBuf;
 import com.mmmthatsgoodcode.redis.Host;
 import com.mmmthatsgoodcode.redis.protocol.PendingResponse;
 import com.mmmthatsgoodcode.redis.protocol.PinnedRequest;
+import com.mmmthatsgoodcode.redis.protocol.AbstractRequest;
 import com.mmmthatsgoodcode.redis.protocol.Request;
 import com.mmmthatsgoodcode.redis.protocol.request.Multi;
 import com.mmmthatsgoodcode.redis.protocol.response.MultiBulkResponse;
 
-public class Transaction extends Request<MultiBulkResponse> implements PinnedRequest, Iterable<Request> {
+public class Transaction extends AbstractRequest<MultiBulkResponse> implements PinnedRequest<MultiBulkResponse>, Iterable<AbstractRequest> {
 
 	private Host host;
-	private List<Request> requests = new ArrayList<Request>();
+	private List<AbstractRequest> requests = new ArrayList<AbstractRequest>();
 	
 	public Transaction() {
 		requests.add(new Multi());
 	}
 	
-	public Transaction(Request...pre) {
+	public Transaction(AbstractRequest...pre) {
 		requests.addAll(Arrays.asList(pre));
 		requests.add(new Multi());
 	}
@@ -38,14 +39,14 @@ public class Transaction extends Request<MultiBulkResponse> implements PinnedReq
 	 * @param request
 	 * @return
 	 */
-	public Transaction add(Request request) {
+	public Transaction add(AbstractRequest request) {
 		requests.add(request);
 		
 		return this;
 	}
 	
-	public Transaction add(Request...requests) {
-		for(Request request:requests) {
+	public Transaction add(AbstractRequest...requests) {
+		for(AbstractRequest request:requests) {
 			add(request);
 		}
 		
@@ -78,12 +79,12 @@ public class Transaction extends Request<MultiBulkResponse> implements PinnedReq
 		return host;
 	}
 
-	public List<Request> getRequests() {
+	public List<AbstractRequest> getRequests() {
 		return requests;
 	}
 
 	@Override
-	public Iterator<Request> iterator() {
+	public Iterator<AbstractRequest> iterator() {
 		return requests.iterator();
 	}
 	

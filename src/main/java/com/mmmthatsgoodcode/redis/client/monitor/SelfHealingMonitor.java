@@ -4,8 +4,12 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.mmmthatsgoodcode.redis.ClientMonitor;
 import com.mmmthatsgoodcode.redis.Connection;
+import com.mmmthatsgoodcode.redis.Host;
 
 /**
  * A monitor that will try and re-establish broken Channels
@@ -14,10 +18,12 @@ import com.mmmthatsgoodcode.redis.Connection;
  */
 public class SelfHealingMonitor implements ClientMonitor {
 
+	protected static final Logger LOG = LoggerFactory.getLogger(SelfHealingMonitor.class);
+	
 	protected class Healer implements Runnable {
 
 		private final int interval;
-		private LinkedBlockingQueue<Connection> reconnectQueue = new LinkedBlockingQueue<Connection>();
+		private LinkedBlockingQueue<Host> reconnectQueue = new LinkedBlockingQueue<Host>();
 		
 		public Healer(int interval) {
 			this.interval = interval;
@@ -29,9 +35,10 @@ public class SelfHealingMonitor implements ClientMonitor {
 			try {
 				
 				while(true) {
-					Connection connection = reconnectQueue.take();
-//					connection.reconnect();
-					
+					Host host = reconnectQueue.take();
+					LOG.warn("Trying to create new connection to {}", host);
+					host.createConnection().connect();
+
 					Thread.sleep(interval);
 					
 				}
@@ -45,8 +52,8 @@ public class SelfHealingMonitor implements ClientMonitor {
 		
 		}
 		
-		public void needReconnect(Connection connection) {
-			reconnectQueue.add(connection);
+		public void needReconnect(Host host) {
+			reconnectQueue.add(host);
 		}
 		
 	}
@@ -55,19 +62,19 @@ public class SelfHealingMonitor implements ClientMonitor {
 	
 	public SelfHealingMonitor(int interval) {
 		healer = new Healer(interval);
-		Thread healerThread = new Thread(healer, "RedisHealer");
+		Thread healerThread = new Thread(healer, "RedisReconnectThread");
 		healerThread.start();
 	}
 
 
 	@Override
 	public void connectionFailed(Connection connection, Throwable cause) {
-		healer.needReconnect(connection);
+		connection.discard(cause);
 	}
 
 	@Override
 	public void connectionLost(Connection connection, Throwable cause) {
-		healer.needReconnect(connection);
+		connection.discard(cause);
 	}
 
 
@@ -88,6 +95,14 @@ public class SelfHealingMonitor implements ClientMonitor {
 	@Override
 	public void connected(Connection client) {
 		// TODO Auto-generated method stub
+		
+	}
+
+
+	@Override
+	public void connectionDiscarded(Connection connection, Throwable cause) {
+		LOG.warn("Discarded connection, incrementing connection create count");
+		healer.needReconnect(connection.getHost());
 		
 	}
 

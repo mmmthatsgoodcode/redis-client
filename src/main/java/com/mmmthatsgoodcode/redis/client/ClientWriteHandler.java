@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.mmmthatsgoodcode.redis.Connection;
+import com.mmmthatsgoodcode.redis.protocol.AbstractRequest;
 import com.mmmthatsgoodcode.redis.protocol.Request;
 
 import io.netty.channel.ChannelHandlerContext;
@@ -25,8 +26,10 @@ public class ClientWriteHandler extends ChannelOutboundHandlerAdapter {
 				ctx.write(request);
 			}
 			
+			
+			
 		} else if (msg instanceof Request) {
-			Request request = (Request) msg;
+			AbstractRequest request = (AbstractRequest) msg;
 			ctx.channel().attr(Connection.OUTBOUND).get().add(request);
 			LOG.debug("Added pending request {} to Channel's outbound queue", request);
 			ctx.write(request);

@@ -8,7 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.mmmthatsgoodcode.redis.Protocol;
-import com.mmmthatsgoodcode.redis.protocol.Request;
+import com.mmmthatsgoodcode.redis.protocol.AbstractRequest;
+import com.mmmthatsgoodcode.redis.protocol.AbstractResponse;
 import com.mmmthatsgoodcode.redis.protocol.Response;
 
 import io.netty.buffer.ByteBuf;
@@ -33,7 +34,7 @@ public class ResponseDecoder extends ByteToMessageDecoder {
 			LOG.debug("Reading from index {} ( {} readable )", in.readerIndex(), in.readableBytes());
 			// first, find out what kind of response this is ( if the first byte is already available on the buffer - it should be )
 			if (currentResponse == null) {
-				currentResponse = Response.infer(in);
+				currentResponse = AbstractResponse.infer(in);
 				LOG.debug("Inferred next response in buffer to be: {}", currentResponse);
 			}
 

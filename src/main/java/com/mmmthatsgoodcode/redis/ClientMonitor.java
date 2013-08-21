@@ -3,10 +3,11 @@ package com.mmmthatsgoodcode.redis;
 
 public interface ClientMonitor {
 
-	public void connectionCreated(Connection client);
-	public void connectionInProgress(Connection client);
-	public void connected(Connection client);
-	public void connectionFailed(Connection client, Throwable cause);
-	public void connectionLost(Connection client, Throwable cause);
+	public void connectionCreated(Connection connection);
+	public void connectionInProgress(Connection connection);
+	public void connected(Connection connection);
+	public void connectionFailed(Connection connection, Throwable cause);
+	public void connectionLost(Connection connection, Throwable cause);
+	public void connectionDiscarded(Connection connection, Throwable cause);
 	
 }

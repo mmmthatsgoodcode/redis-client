@@ -8,9 +8,9 @@ import org.slf4j.LoggerFactory;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufProcessor;
 
-import com.mmmthatsgoodcode.redis.protocol.Response;
+import com.mmmthatsgoodcode.redis.protocol.AbstractResponse;
 
-public class StatusResponse extends Response<String> {
+public class StatusResponse extends AbstractResponse<String> {
 
 	private static final Logger LOG = LoggerFactory.getLogger(StatusResponse.class);
 	

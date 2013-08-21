@@ -9,9 +9,10 @@ import org.slf4j.LoggerFactory;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufProcessor;
 
+import com.mmmthatsgoodcode.redis.protocol.AbstractResponse;
 import com.mmmthatsgoodcode.redis.protocol.Response;
 
-public class MultiBulkResponse extends Response<List<Response>> {
+public class MultiBulkResponse extends AbstractResponse<List<Response>> {
 	
 	private static final Logger LOG = LoggerFactory.getLogger(MultiBulkResponse.class);
 	private List<Response> responses = new ArrayList<Response>();
@@ -48,7 +49,7 @@ public class MultiBulkResponse extends Response<List<Response>> {
 
 			}
 			
-			if (responses.size() == 0 && this.in.readableBytes() > 1) responses.add(Response.infer(in));
+			if (responses.size() == 0 && this.in.readableBytes() > 1) responses.add(AbstractResponse.infer(in));
 			
 			while (responses.size() > 0 && responses.size() <= paramLength) {
 				LOG.debug("Decoding Response {}, {} in MultiBulkResponse", responses.size()+" of "+paramLength, responses.get(responses.size()-1).getClass().getSimpleName());
@@ -58,7 +59,7 @@ public class MultiBulkResponse extends Response<List<Response>> {
 					// see if we need to prepare the next response
 					if (responses.size() != paramLength) {
 						this.in.readerIndex(this.in.readerIndex()+DELIMITER.length); // move reader index beyond the CRLF
-						if (this.in.readableBytes() > 1) responses.add(Response.infer(in)); // infer next response
+						if (this.in.readableBytes() > 1) responses.add(AbstractResponse.infer(in)); // infer next response
 						else return false; // not enough bytes in buffer to infer the next response.. wait for more.
 
 					} else {

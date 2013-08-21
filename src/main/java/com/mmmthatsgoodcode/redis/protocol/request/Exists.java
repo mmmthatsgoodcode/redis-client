@@ -3,7 +3,7 @@ package com.mmmthatsgoodcode.redis.protocol.request;
 import io.netty.buffer.ByteBuf;
 
 import com.mmmthatsgoodcode.redis.protocol.KeyedRequest;
-import com.mmmthatsgoodcode.redis.protocol.Request.EncodeHelper;
+import com.mmmthatsgoodcode.redis.protocol.AbstractRequest.EncodeHelper;
 import com.mmmthatsgoodcode.redis.protocol.response.IntegerResponse;
 
 public class Exists extends KeyedRequest<IntegerResponse> {

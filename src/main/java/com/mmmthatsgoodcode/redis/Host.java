@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 
 
@@ -18,7 +19,12 @@ import org.slf4j.LoggerFactory;
 import com.lmax.disruptor.WaitStrategy;
 import com.mmmthatsgoodcode.redis.Client.HostInfo;
 import com.mmmthatsgoodcode.redis.client.NoConnectionsAvailableException;
+import com.mmmthatsgoodcode.redis.client.Transaction;
+import com.mmmthatsgoodcode.redis.protocol.PendingResponse;
 import com.mmmthatsgoodcode.redis.protocol.Request;
+import com.mmmthatsgoodcode.redis.protocol.Response;
+import com.mmmthatsgoodcode.redis.protocol.request.Exec;
+import com.mmmthatsgoodcode.redis.protocol.response.MultiBulkResponse;
 
 public class Host {
 
@@ -60,7 +66,7 @@ public class Host {
 			
 			forClient(client);
 			
-			Host host = new Host(client, hostInfo);
+			Host host = new Host(client, hostInfo, channelOptions);
 			
 			for(int c=1; c<=numConnections; c++) {
 				host.createConnection(channelOptions);
@@ -75,17 +81,26 @@ public class Host {
 	}
 	
 	private List<Connection> connections = new ArrayList<Connection>();
+	private final Map<ChannelOption, Object> channelOptions;
 	private final Client client;
 	private final HostInfo hostInfo;
 	private final static Logger LOG = LoggerFactory.getLogger(Host.class);
 	
-	private Host(Client client, HostInfo hostInfo) {
+	private Host(Client client, HostInfo hostInfo, Map<ChannelOption, Object> channelOptions) {
 		this.client = client;
 		this.hostInfo = hostInfo;
+		this.channelOptions = channelOptions;
 	}
 	
-	protected void createConnection(Map<ChannelOption, Object> channelOptions) {
-		connections.add(new Connection(this, channelOptions));
+	public Connection createConnection() {
+		return createConnection(channelOptions);
+	}
+	
+	public Connection createConnection(Map<ChannelOption, Object> channelOptions) {
+		Connection connection = new Connection(this, channelOptions);
+		connections.add(connection);
+		
+		return connection;
 	}
 	
 	public Client getClient() {
@@ -100,16 +115,44 @@ public class Host {
 		return hostInfo.toString();
 	}
 	
-	public void send(Request request) throws NoConnectionsAvailableException {
+	public <T extends Response> PendingResponse<T> send(Request<T> request) throws NoConnectionsAvailableException {
 		LOG.debug("Incoming Request {}", request);
 		if (connections.size() == 0) {
 			LOG.error("Attempted to schedule request {} with no Connections available!");
 			throw new IllegalStateException("No connections!");
 		}
 		
-		Connection selectedConnection;
+		Connection selectedConnection = getAvailbleConnection();
+	
+		LOG.debug("Selected connection {}", selectedConnection);
+		return selectedConnection.send(request);
+		
+	}
+	
+	public PendingResponse<MultiBulkResponse> send(Transaction transaction) throws NoConnectionsAvailableException {
+		LOG.debug("Incoming Transaction {}", transaction);
+		
+		// close transaction with EXEC
+		Exec exec = new Exec();
+		transaction.add(exec);
+		
+		send(transaction);
+		
+		// return the EXEC's response..
+		return exec.getResponse();
+		
+	}
+	
+	/**
+	 * TODO ConnectionSelectionStrategy?
+	 * @return
+	 * @throws NoConnectionsAvailableException 
+	 */
+	public Connection getAvailbleConnection() throws NoConnectionsAvailableException {
+		
 		if (connections.size() > 1) {
-			// TODO selection strategy ?
+		
+			// filter connections
 			List<Connection> eligibleConnections = new ArrayList<Connection>(connections.size());
 			for(Connection connection:connections) {
 				if (connection.getState() == Connection.State.CONNECTED) eligibleConnections.add(connection);
@@ -118,16 +161,15 @@ public class Host {
 			if (eligibleConnections.size() == 0) throw new NoConnectionsAvailableException();
 			
 			Collections.shuffle(eligibleConnections);
-			selectedConnection = eligibleConnections.get(0);
+			return eligibleConnections.get(0);
+		
+		} else if (connections.get(0).getState() == Connection.State.CONNECTED) {
 			
+			return connections.get(0);
 			
-		} else {
-			selectedConnection = connections.get(0);
 		}
 		
-		LOG.debug("Selected connection {}", selectedConnection);
-		selectedConnection.send(request);
-
+		throw new NoConnectionsAvailableException();
 		
 	}
 	
