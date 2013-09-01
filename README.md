@@ -55,7 +55,7 @@ Client client = new DisruptorClient.Builder()
 client.connect();
 
 // Send a request
-client.send(new Set("Foo", "Bar"), new Runnable() {
+client.send(new Set("Foo", "Bar")).onComplete(new Runnable() {
 
 	public void run() {
 		String v = client.send(new Get("Foo")).get(5, TimeUnit.MILLISECONDS);

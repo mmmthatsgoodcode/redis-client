@@ -1,7 +1,7 @@
 package com.mmmthatsgoodcode.redis.client;
 
-import com.mmmthatsgoodcode.redis.protocol.Request;
-import com.mmmthatsgoodcode.redis.protocol.Response;
+import com.mmmthatsgoodcode.redis.protocol.Command;
+import com.mmmthatsgoodcode.redis.protocol.Reply;
 
 public class RedisClientException extends Exception {
 

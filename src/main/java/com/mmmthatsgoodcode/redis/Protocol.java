@@ -14,7 +14,7 @@ public abstract class Protocol {
 	// Character encoding
 	public static final Charset ENCODING = Charset.forName("UTF-8");
 	
-	// Request delimiter
+	// Command delimiter
 	public static final byte[] DELIMITER = "\r\n".getBytes(ENCODING);
 	
 	// Allocator to grab buffers from

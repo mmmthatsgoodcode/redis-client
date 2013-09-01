@@ -1,0 +1,82 @@
+package com.mmmthatsgoodcode.redis.client.pipeline;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.mmmthatsgoodcode.redis.Protocol;
+import com.mmmthatsgoodcode.redis.protocol.AbstractCommand;
+import com.mmmthatsgoodcode.redis.protocol.AbstractReply;
+import com.mmmthatsgoodcode.redis.protocol.Reply;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufProcessor;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.ByteToMessageDecoder;
+import io.netty.util.AttributeKey;
+
+public class ReplyDecoder extends ByteToMessageDecoder {
+
+	private final static Logger LOG = LoggerFactory.getLogger(ReplyDecoder.class);
+
+	private List<Reply> replies = new ArrayList<Reply>();
+	private Reply currentReply = null;
+	
+	@Override
+	protected void decode(ChannelHandlerContext ctx, ByteBuf in,
+			List<Object> out) throws Exception {
+		
+		// if there are readable bytes on the buffer - there should be..
+		while (in.readableBytes() > 1) {
+			LOG.debug("Reading from index {} ( {} readable )", in.readerIndex(), in.readableBytes());
+			// first, find out what kind of reply this is ( if the first byte is already available on the buffer - it should be )
+			if (currentReply == null) {
+				currentReply = AbstractReply.infer(in);
+				LOG.debug("Inferred next reply in buffer to be: {}", currentReply);
+			}
+
+			// decode contents from the buffer
+			if (currentReply != null && currentReply.decode() == true) {
+				// decoder finished
+				replies.add(currentReply);
+				LOG.debug("Decoded reply: {}", currentReply.value());
+				currentReply = null;
+
+				LOG.debug("Buffer after decode: {}/{}", in.readerIndex(), in.readableBytes());
+				// see if we are done completely decoding the buffer
+				if (in.readableBytes() == Protocol.DELIMITER.length && in.forEachByte(Protocol.HAS_DELIMITER) != -1) {
+					// last two bytes is a CRLF
+					LOG.debug("End of buffer");
+					in.clear();
+					
+					ctx.fireChannelRead(replies);
+					return;
+
+				}
+				
+				// there are still bytes in the buffer after decode, that are not CRLF
+				LOG.debug("Still {} bytes buffered to go..", in.readableBytes());
+				
+				// skip the delimiter
+				if (in.readableBytes() > Protocol.DELIMITER.length) in.readerIndex(in.readerIndex()+Protocol.DELIMITER.length);
+				else in.readerIndex(in.writerIndex());
+				
+
+			} else {
+
+				// bytes in buffer were not enough to decode a reply, continue..
+				return;
+			
+			}
+
+		
+		}
+		
+		return;
+		
+	}
+
+}

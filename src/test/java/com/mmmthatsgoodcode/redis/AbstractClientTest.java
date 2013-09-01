@@ -16,6 +16,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+
 import static org.junit.Assert.*;
 
 import com.codahale.metrics.Timer;
@@ -28,15 +29,15 @@ import com.lmax.disruptor.YieldingWaitStrategy;
 import com.mmmthatsgoodcode.redis.client.NoConnectionsAvailableException;
 import com.mmmthatsgoodcode.redis.client.Transaction;
 import com.mmmthatsgoodcode.redis.client.monitor.LoggingMonitor;
-import com.mmmthatsgoodcode.redis.protocol.PendingResponse;
-import com.mmmthatsgoodcode.redis.protocol.AbstractResponse;
-import com.mmmthatsgoodcode.redis.protocol.Response;
-import com.mmmthatsgoodcode.redis.protocol.request.Exists;
-import com.mmmthatsgoodcode.redis.protocol.request.Get;
-import com.mmmthatsgoodcode.redis.protocol.request.Ping;
-import com.mmmthatsgoodcode.redis.protocol.request.Set;
-import com.mmmthatsgoodcode.redis.protocol.request.Setex;
-import com.mmmthatsgoodcode.redis.protocol.request.Watch;
+import com.mmmthatsgoodcode.redis.protocol.PendingReply;
+import com.mmmthatsgoodcode.redis.protocol.AbstractReply;
+import com.mmmthatsgoodcode.redis.protocol.Reply;
+import com.mmmthatsgoodcode.redis.protocol.command.Exists;
+import com.mmmthatsgoodcode.redis.protocol.command.Get;
+import com.mmmthatsgoodcode.redis.protocol.command.Ping;
+import com.mmmthatsgoodcode.redis.protocol.command.Set;
+import com.mmmthatsgoodcode.redis.protocol.command.Setex;
+import com.mmmthatsgoodcode.redis.protocol.command.Watch;
 import com.mmmthatsgoodcode.redis.util.RedisClientMurmurHash;
 
 public abstract class AbstractClientTest {
@@ -65,19 +66,19 @@ public abstract class AbstractClientTest {
 				public void run() {
 					String id = UUID.randomUUID().toString();
 //					System.out.println( "setting "+id);
-//					System.out.println( "set response - "+CLIENT.send(new Set(id, "value-for-"+id)).get().value() );
+//					System.out.println( "set reply - "+CLIENT.send(new Set(id, "value-for-"+id)).get().value() );
 					String value = "value-for-"+id;
 					
 //					System.out.println( "getting "+id);
 					Context timer = null;
 					try {
-						String setResponse = CLIENT.send(new Set(id, value)).get().value();
+						String setreply = CLIENT.send(new Set(id, value)).get().value();
 
 //						System.out.println( id+" value - "+CLIENT.send(new Get(id)).get(1, TimeUnit.SECONDS).value() );
 						timer = getLatency.time();
-						String response = (String) CLIENT.send(new Get(id)).get(100, TimeUnit.MILLISECONDS).value();
+						String reply = (String) CLIENT.send(new Get(id)).get(100, TimeUnit.MILLISECONDS).value();
 						timer.stop();
-						assertTrue(response.equals(value));
+						assertTrue(reply.equals(value));
 						
 					} catch (IllegalStateException | InterruptedException
 							 | TimeoutException e) {
@@ -87,7 +88,7 @@ public abstract class AbstractClientTest {
 						System.err.println(id+" No conn available");
 					}
 					
-//					responses.add( CLIENT.send(new Get(id)) );
+//					replies.add( CLIENT.send(new Get(id)) );
 
 				}
 				
@@ -109,18 +110,18 @@ public abstract class AbstractClientTest {
 	public void singleThreadedPipelineTest() throws InterruptedException, NoConnectionsAvailableException, ExecutionException, TimeoutException {
 		
 		final Timer getLatency = new Timer();
-		final List<AbstractResponse> responses = new ArrayList<AbstractResponse>();
+		final List<AbstractReply> replies = new ArrayList<AbstractReply>();
 
 		for (int r=1; r <= 1000; r++) {
 
 			final String id = UUID.randomUUID().toString();
-			responses.add( CLIENT.send(new Setex(id, "i'm really really random", 5000), new Runnable() {
+			replies.add( CLIENT.send(new Setex(id, "i'm really really random", 5000), new Runnable() {
 
 				@Override
 				public void run() {
 					// TODO Auto-generated method stub
 					try {
-						responses.add( CLIENT.send(new Get(id)).get(100, TimeUnit.MILLISECONDS) );
+						replies.add( CLIENT.send(new Get(id)).get(100, TimeUnit.MILLISECONDS) );
 					} catch (NoConnectionsAvailableException | InterruptedException | TimeoutException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -128,14 +129,14 @@ public abstract class AbstractClientTest {
 				}
 				
 			}).get(1000, TimeUnit.MILLISECONDS) );
-//			responses.add( CLIENT.send(new Set(id, "i'm really really random")) );
+//			replies.add( CLIENT.send(new Set(id, "i'm really really random")) );
 
 
 		}		
 		
 		
-		for(Response response:responses) {
-				System.out.println(response);
+		for(Reply reply:replies) {
+				System.out.println(reply);
 		}
 				
 	}
@@ -153,12 +154,12 @@ public abstract class AbstractClientTest {
 			
 			try {
 				timer = getLatency.time();
-				List<Response> responses = CLIENT.send(new Transaction(new Watch(id)).add(new Set(id, value), new Exists(id), new Get(id))).get(100, TimeUnit.MILLISECONDS).value();
+				List<Reply> replies = CLIENT.send(new Transaction(new Watch(id)).add(new Set(id, value), new Exists(id), new Get(id))).get(100, TimeUnit.MILLISECONDS).value();
 				timer.stop();
-				System.out.println(responses);
+				System.out.println(replies);
 
-				assertEquals(responses.size(), 3);
-				assertEquals((String) responses.get(2).value(), value);
+				assertEquals(replies.size(), 3);
+				assertEquals((String) replies.get(2).value(), value);
 			} catch (IllegalStateException | InterruptedException
 					 | TimeoutException | NoConnectionsAvailableException e) {
 				System.err.println(id+" Timed out");
@@ -184,7 +185,7 @@ public abstract class AbstractClientTest {
 				public void run() {
 					String id = UUID.randomUUID().toString();
 //					System.out.println( "setting "+id);
-//					System.out.println( "set response - "+CLIENT.send(new Set(id, "value-for-"+id)).get().value() );
+//					System.out.println( "set reply - "+CLIENT.send(new Set(id, "value-for-"+id)).get().value() );
 					String value = "value-for-"+id;
 					
 //					System.out.println( "getting "+id);
@@ -192,14 +193,14 @@ public abstract class AbstractClientTest {
 					try {
 //						System.out.println( id+" value - "+CLIENT.send(new Get(id)).get(1, TimeUnit.SECONDS).value() );
 						timer = getLatency.time();
-						List<Response> responses = CLIENT.send(
+						List<Reply> replies = CLIENT.send(
 								new Transaction()
 								.pin(CLIENT.hostForKey(id))
 								.add(new Set(id, value), new Get(id))
 								).get(5, TimeUnit.SECONDS).value();
 						timer.stop();
-						assertEquals(responses.size(), 2);
-						assertEquals((String) responses.get(1).value(), value);
+						assertEquals(replies.size(), 2);
+						assertEquals((String) replies.get(1).value(), value);
 						
 					} catch (IllegalStateException | InterruptedException
 							 | TimeoutException | NoConnectionsAvailableException e) {
@@ -207,7 +208,7 @@ public abstract class AbstractClientTest {
 						if (timer != null) timer.stop();
 					}
 					
-//					responses.add( CLIENT.send(new Get(id)) );
+//					replies.add( CLIENT.send(new Get(id)) );
 
 				}
 				

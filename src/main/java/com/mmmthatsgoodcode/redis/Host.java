@@ -13,6 +13,8 @@ import java.util.Random;
 
 
 
+
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,11 +22,11 @@ import com.lmax.disruptor.WaitStrategy;
 import com.mmmthatsgoodcode.redis.Client.HostInfo;
 import com.mmmthatsgoodcode.redis.client.NoConnectionsAvailableException;
 import com.mmmthatsgoodcode.redis.client.Transaction;
-import com.mmmthatsgoodcode.redis.protocol.PendingResponse;
-import com.mmmthatsgoodcode.redis.protocol.Request;
-import com.mmmthatsgoodcode.redis.protocol.Response;
-import com.mmmthatsgoodcode.redis.protocol.request.Exec;
-import com.mmmthatsgoodcode.redis.protocol.response.MultiBulkResponse;
+import com.mmmthatsgoodcode.redis.protocol.PendingReply;
+import com.mmmthatsgoodcode.redis.protocol.Command;
+import com.mmmthatsgoodcode.redis.protocol.Reply;
+import com.mmmthatsgoodcode.redis.protocol.command.Exec;
+import com.mmmthatsgoodcode.redis.protocol.reply.MultiBulkReply;
 
 public class Host {
 
@@ -115,21 +117,21 @@ public class Host {
 		return hostInfo.toString();
 	}
 	
-	public <T extends Response> PendingResponse<T> send(Request<T> request) throws NoConnectionsAvailableException {
-		LOG.debug("Incoming Request {}", request);
+	public <T extends Reply> PendingReply<T> send(Command<T> command) throws NoConnectionsAvailableException {
+		LOG.debug("Outgoing command {}", command);
 		if (connections.size() == 0) {
-			LOG.error("Attempted to schedule request {} with no Connections available!");
+			LOG.error("Attempted to schedule command {} with no Connections available!");
 			throw new IllegalStateException("No connections!");
 		}
 		
 		Connection selectedConnection = getAvailbleConnection();
 	
 		LOG.debug("Selected connection {}", selectedConnection);
-		return selectedConnection.send(request);
+		return selectedConnection.send(command);
 		
 	}
 	
-	public PendingResponse<MultiBulkResponse> send(Transaction transaction) throws NoConnectionsAvailableException {
+	public PendingReply<MultiBulkReply> send(Transaction transaction) throws NoConnectionsAvailableException {
 		LOG.debug("Incoming Transaction {}", transaction);
 		
 		// close transaction with EXEC
@@ -138,8 +140,8 @@ public class Host {
 		
 		send(transaction);
 		
-		// return the EXEC's response..
-		return exec.getResponse();
+		// return the EXEC's reply..
+		return exec.getReply();
 		
 	}
 	
