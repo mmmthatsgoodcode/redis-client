@@ -29,8 +29,6 @@ import com.lmax.disruptor.YieldingWaitStrategy;
 import com.mmmthatsgoodcode.redis.client.NoConnectionsAvailableException;
 import com.mmmthatsgoodcode.redis.client.Transaction;
 import com.mmmthatsgoodcode.redis.client.monitor.LoggingMonitor;
-import com.mmmthatsgoodcode.redis.protocol.PendingReply;
-import com.mmmthatsgoodcode.redis.protocol.AbstractReply;
 import com.mmmthatsgoodcode.redis.protocol.Reply;
 import com.mmmthatsgoodcode.redis.protocol.command.Exists;
 import com.mmmthatsgoodcode.redis.protocol.command.Get;
@@ -38,6 +36,8 @@ import com.mmmthatsgoodcode.redis.protocol.command.Ping;
 import com.mmmthatsgoodcode.redis.protocol.command.Set;
 import com.mmmthatsgoodcode.redis.protocol.command.Setex;
 import com.mmmthatsgoodcode.redis.protocol.command.Watch;
+import com.mmmthatsgoodcode.redis.protocol.model.AbstractReply;
+import com.mmmthatsgoodcode.redis.protocol.model.PendingReply;
 import com.mmmthatsgoodcode.redis.util.RedisClientMurmurHash;
 
 public abstract class AbstractClientTest {

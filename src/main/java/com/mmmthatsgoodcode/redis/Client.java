@@ -30,12 +30,12 @@ import com.mmmthatsgoodcode.redis.disruptor.processor.CommandEvent;
 import com.mmmthatsgoodcode.redis.disruptor.processor.CommandHasher;
 import com.mmmthatsgoodcode.redis.disruptor.processor.CommandRouter;
 import com.mmmthatsgoodcode.redis.disruptor.processor.CommandEvent.CommandEventTranslator;
-import com.mmmthatsgoodcode.redis.protocol.KeyedCommand;
-import com.mmmthatsgoodcode.redis.protocol.PendingReply;
-import com.mmmthatsgoodcode.redis.protocol.PinnedCommand;
 import com.mmmthatsgoodcode.redis.protocol.Command;
 import com.mmmthatsgoodcode.redis.protocol.Reply;
 import com.mmmthatsgoodcode.redis.protocol.command.Exec;
+import com.mmmthatsgoodcode.redis.protocol.model.KeyedCommand;
+import com.mmmthatsgoodcode.redis.protocol.model.PendingReply;
+import com.mmmthatsgoodcode.redis.protocol.model.PinnedCommand;
 import com.mmmthatsgoodcode.redis.protocol.reply.MultiBulkReply;
 
 public class Client {

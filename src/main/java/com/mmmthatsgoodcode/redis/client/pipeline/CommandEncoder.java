@@ -5,9 +5,10 @@ import java.nio.charset.Charset;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.mmmthatsgoodcode.redis.Client;
 import com.mmmthatsgoodcode.redis.Connection;
-import com.mmmthatsgoodcode.redis.protocol.AbstractCommand;
-import com.mmmthatsgoodcode.redis.protocol.AbstractCommand.EncodeHelper;
+import com.mmmthatsgoodcode.redis.protocol.model.AbstractCommand;
+import com.mmmthatsgoodcode.redis.protocol.model.AbstractCommand.EncodeHelper;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -19,6 +20,11 @@ import io.netty.handler.codec.MessageToByteEncoder;
 public class CommandEncoder extends MessageToByteEncoder<AbstractCommand> {
 
 	private static final Logger LOG = LoggerFactory.getLogger(CommandEncoder.class);
+	private final Client client;
+	
+	public CommandEncoder(Client client) {
+		this.client = client;
+	}
 	
 	@Override
 	protected void encode(ChannelHandlerContext ctx, AbstractCommand msg, ByteBuf out)

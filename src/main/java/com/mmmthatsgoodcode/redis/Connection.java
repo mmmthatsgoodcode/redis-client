@@ -31,10 +31,10 @@ import com.mmmthatsgoodcode.redis.client.pipeline.CommandFulfiller;
 import com.mmmthatsgoodcode.redis.client.pipeline.CommandLogger;
 import com.mmmthatsgoodcode.redis.client.pipeline.ReplyDecoder;
 import com.mmmthatsgoodcode.redis.client.pipeline.ReplyLogger;
-import com.mmmthatsgoodcode.redis.protocol.PendingReply;
-import com.mmmthatsgoodcode.redis.protocol.AbstractCommand;
 import com.mmmthatsgoodcode.redis.protocol.Command;
 import com.mmmthatsgoodcode.redis.protocol.Reply;
+import com.mmmthatsgoodcode.redis.protocol.model.AbstractCommand;
+import com.mmmthatsgoodcode.redis.protocol.model.PendingReply;
 
 /**
  * Represents a single connection to a RedisHost.

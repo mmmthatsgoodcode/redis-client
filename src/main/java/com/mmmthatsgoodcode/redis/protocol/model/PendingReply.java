@@ -1,4 +1,4 @@
-package com.mmmthatsgoodcode.redis.protocol;
+package com.mmmthatsgoodcode.redis.protocol.model;
 
 import io.netty.channel.ChannelFuture;
 
@@ -15,6 +15,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.mmmthatsgoodcode.redis.client.RedisClientException;
+import com.mmmthatsgoodcode.redis.protocol.Command;
+import com.mmmthatsgoodcode.redis.protocol.Reply;
 
 public class PendingReply<T extends Reply> implements Future<T> {
 

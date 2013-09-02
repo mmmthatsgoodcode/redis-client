@@ -1,5 +1,7 @@
 package com.mmmthatsgoodcode.redis.protocol;
 
+import com.mmmthatsgoodcode.redis.protocol.model.PendingReply;
+
 import io.netty.buffer.ByteBuf;
 
 /**
@@ -10,17 +12,6 @@ import io.netty.buffer.ByteBuf;
  */
 public interface Command<T extends Reply> {
 
-	/**
-	 * Encode the command in to a ByteBuf per the Redis protocol specification
-	 * @return
-	 */
-	public abstract ByteBuf encode();
-
-	/**
-	 * Get the primary identifier of the Command ( GET, SET, etc )
-	 * @return
-	 */
-	public abstract byte[] getName();
 
 	/**
 	 * Called by PendingReply.fulfill() before the semaphore is returned.
@@ -28,7 +19,7 @@ public interface Command<T extends Reply> {
 	 * waiting on PendingReply.get()
 	 */
 	public abstract void replyReceived(T reply);
-
+	public abstract String getName();
 	public abstract int getArgc();
 
 	public abstract void setArgc(int argc);

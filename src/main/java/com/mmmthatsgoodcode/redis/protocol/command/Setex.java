@@ -2,8 +2,8 @@ package com.mmmthatsgoodcode.redis.protocol.command;
 
 import io.netty.buffer.ByteBuf;
 
-import com.mmmthatsgoodcode.redis.protocol.KeyedCommand;
-import com.mmmthatsgoodcode.redis.protocol.AbstractCommand.EncodeHelper;
+import com.mmmthatsgoodcode.redis.protocol.model.KeyedCommand;
+import com.mmmthatsgoodcode.redis.protocol.model.AbstractCommand.EncodeHelper;
 
 public class Setex extends Set {
 
@@ -14,6 +14,10 @@ public class Setex extends Set {
 		super(key, value);
 		setArgc(4);
 		this.expiry = expiry;
+	}
+	
+	public int getExpiry() {
+		return expiry;
 	}
 	
 	@Override

@@ -1,4 +1,4 @@
-package com.mmmthatsgoodcode.redis.protocol;
+package com.mmmthatsgoodcode.redis.protocol.model;
 
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -11,6 +11,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufProcessor;
 
 import com.mmmthatsgoodcode.redis.Protocol;
+import com.mmmthatsgoodcode.redis.protocol.Command;
+import com.mmmthatsgoodcode.redis.protocol.Reply;
 import com.mmmthatsgoodcode.redis.protocol.reply.*;
 
 public abstract class AbstractReply<T> extends Protocol implements Reply<T> {

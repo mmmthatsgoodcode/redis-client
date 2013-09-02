@@ -9,8 +9,8 @@ import org.slf4j.LoggerFactory;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufProcessor;
 
-import com.mmmthatsgoodcode.redis.protocol.AbstractReply;
 import com.mmmthatsgoodcode.redis.protocol.Reply;
+import com.mmmthatsgoodcode.redis.protocol.model.AbstractReply;
 
 public class MultiBulkReply extends AbstractReply<List<Reply>> {
 	

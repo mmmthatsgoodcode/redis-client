@@ -2,24 +2,50 @@ package com.mmmthatsgoodcode.redis;
 
 import java.nio.charset.Charset;
 
+import javax.naming.OperationNotSupportedException;
+
+import com.mmmthatsgoodcode.redis.client.Transaction;
+import com.mmmthatsgoodcode.redis.client.UnrecognizedReplyException;
+import com.mmmthatsgoodcode.redis.protocol.Reply;
+import com.mmmthatsgoodcode.redis.protocol.command.*;
+import com.mmmthatsgoodcode.redis.protocol.reply.*;
+
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufProcessor;
 import io.netty.buffer.PooledByteBufAllocator;
 
-public abstract class Protocol {
+public interface Protocol {
 	
-	// a ByteBufProcessor that finds delimiters
-	public static final ByteBufProcessor HAS_DELIMITER = ByteBufProcessor.FIND_CRLF;
+	public enum Replies { BULK, ERROR, INTEGER, MULTI_BULK, STATUS, UNKNOWN }
+	public enum Commands { GET, SET, EXEC, EXISTS, MULTI, PING, SETNX, WATCH }
 	
-	// Character encoding
-	public static final Charset ENCODING = Charset.forName("UTF-8");
+	public ByteBufAllocator getByteBufAllocator();
 	
-	// Command delimiter
-	public static final byte[] DELIMITER = "\r\n".getBytes(ENCODING);
+	public interface Encoder {
+
+		public ByteBuf encode(Exec command);
+		public ByteBuf encode(Exists command);
+		public ByteBuf encode(Get command);
+		public ByteBuf encode(Multi command);
+		public ByteBuf encode(Ping command);
+		public ByteBuf encode(Set command);
+		public ByteBuf encode(Setex command);
+		public ByteBuf encode(Setnx command);
+		public ByteBuf encode(Watch command);		
+		public ByteBuf encodeTransaction(Transaction command) throws OperationNotSupportedException;
+		
+	}
 	
-	// Allocator to grab buffers from
-	protected static ByteBufAllocator byteBufAllocator = new PooledByteBufAllocator();
+	public interface Decoder {
+
+		public Reply decode(ByteBuf in) throws UnrecognizedReplyException;
+
+	}
 	
-	
+
+	public Protocol.Encoder getEncoder();
+	public Protocol.Decoder getDecoder();
+
 	
 }

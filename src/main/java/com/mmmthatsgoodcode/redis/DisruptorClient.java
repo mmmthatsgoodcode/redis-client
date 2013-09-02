@@ -18,10 +18,10 @@ import com.mmmthatsgoodcode.redis.client.Transaction;
 import com.mmmthatsgoodcode.redis.disruptor.processor.CommandEvent;
 import com.mmmthatsgoodcode.redis.disruptor.processor.CommandHasher;
 import com.mmmthatsgoodcode.redis.disruptor.processor.CommandRouter;
-import com.mmmthatsgoodcode.redis.protocol.PendingReply;
 import com.mmmthatsgoodcode.redis.protocol.Command;
 import com.mmmthatsgoodcode.redis.protocol.Reply;
 import com.mmmthatsgoodcode.redis.protocol.command.Exec;
+import com.mmmthatsgoodcode.redis.protocol.model.PendingReply;
 import com.mmmthatsgoodcode.redis.protocol.reply.MultiBulkReply;
 
 public class DisruptorClient extends Client {

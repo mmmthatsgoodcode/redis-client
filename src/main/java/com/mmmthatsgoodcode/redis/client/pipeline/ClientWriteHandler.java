@@ -5,8 +5,8 @@ import org.slf4j.LoggerFactory;
 
 import com.mmmthatsgoodcode.redis.Connection;
 import com.mmmthatsgoodcode.redis.client.Transaction;
-import com.mmmthatsgoodcode.redis.protocol.AbstractCommand;
 import com.mmmthatsgoodcode.redis.protocol.Command;
+import com.mmmthatsgoodcode.redis.protocol.model.AbstractCommand;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;

@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import com.mmmthatsgoodcode.redis.Connection;
 import com.mmmthatsgoodcode.redis.protocol.Command;
-import com.mmmthatsgoodcode.redis.protocol.AbstractReply;
+import com.mmmthatsgoodcode.redis.protocol.model.AbstractReply;
 
 import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandlerContext;
