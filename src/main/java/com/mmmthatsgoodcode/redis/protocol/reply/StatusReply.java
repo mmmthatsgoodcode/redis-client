@@ -17,6 +17,13 @@ public class StatusReply extends AbstractReply<String> {
 	public StatusReply(String statusCode) {
 		setValue(statusCode);
 	}
+	
+	public boolean equals(Object object) {
+		if (!(object instanceof StatusReply)) return false;
+		
+		StatusReply other = (StatusReply) object;
+		return other.value().equals(value());
+	}
 
 
 }

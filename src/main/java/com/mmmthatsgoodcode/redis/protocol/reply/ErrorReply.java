@@ -26,9 +26,6 @@ public class ErrorReply extends AbstractReply<String> {
 	public boolean equals(Object object) {
 		if (!(object instanceof ErrorReply)) return false;
 		ErrorReply other = (ErrorReply) object;
-		
-		System.out.println(other);
-		System.out.println(this);
 
 		return other.getErrorMessage().equals(getErrorMessage()) && other.getErrorType().equals(getErrorType());
 		

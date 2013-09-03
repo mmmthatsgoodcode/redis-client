@@ -11,6 +11,7 @@ import org.junit.Test;
 
 import com.mmmthatsgoodcode.redis.client.UnrecognizedReplyException;
 import com.mmmthatsgoodcode.redis.protocol.reply.ErrorReply;
+import com.mmmthatsgoodcode.redis.protocol.reply.IntegerReply;
 import com.mmmthatsgoodcode.redis.protocol.reply.StatusReply;
 
 public class Redis2TextProtocolTest {
@@ -53,11 +54,21 @@ public class Redis2TextProtocolTest {
 		ByteArrayOutputStream errorReplyBytes = new ByteArrayOutputStream();
 		errorReplyBytes.write("-DEVELOPERFAIL You are stupid".getBytes(Redis2TextProtocol.ENCODING));
 		errorReplyBytes.write(Redis2TextProtocol.DELIMITER);
-		
-		System.out.println()
-		
+				
 		assertEquals(new ErrorReply("DEVELOPERFAIL", "You are stupid"), protocol.getDecoder().decode(allocator.buffer().writeBytes(errorReplyBytes.toByteArray())));
 		
+		
+	}
+	
+	@Test
+	public void testIntegerReply() throws IOException, UnrecognizedReplyException {
+		
+		// create a valid Error status reply
+		ByteArrayOutputStream integerReplyBytes = new ByteArrayOutputStream();
+		integerReplyBytes.write(":1234".getBytes(Redis2TextProtocol.ENCODING));
+		integerReplyBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		assertEquals(new IntegerReply(1234), protocol.getDecoder().decode(allocator.buffer().writeBytes(integerReplyBytes.toByteArray())));
 		
 	}
 	

@@ -236,8 +236,8 @@ public class Redis2TextProtocol implements Protocol {
 			
 			if (in.forEachByte(HAS_DELIMITER) != -1) {
 				// there is a delimiter in this, we're good to parse
-				byte[] errType = in.readBytes( in.forEachByte(ByteBufProcessor.FIND_LINEAR_WHITESPACE)-in.readerIndex()+1 ).array(); // read up to the first white space
-				// move reader beyond the whitespace
+				byte[] errType = in.readBytes( in.forEachByte(ByteBufProcessor.FIND_LINEAR_WHITESPACE)-in.readerIndex() ).array(); // read up to the first white space
+				in.readerIndex(in.readerIndex()+1); // move reader beyond the whitespace
 				byte[] errMessage = in.readBytes( in.forEachByte(HAS_DELIMITER)-in.readerIndex() ).array(); // read up to the next white space
 				return new ErrorReply(new String(errType, ENCODING), new String(errMessage, ENCODING));
 				
@@ -246,10 +246,25 @@ public class Redis2TextProtocol implements Protocol {
 			return null;
 		}
 		
+		/**
+		 * Expected format:
+		 * :{integer-as-string}DELIMITER
+		 */
 		protected IntegerReply decodeIntegerReply(ByteBuf in) {
+			if (in.forEachByte(HAS_DELIMITER) != -1) {
+				// there is a delimiter in this, we're good to parse
+				byte[] intValue = in.readBytes( in.forEachByte(HAS_DELIMITER)-in.readerIndex() ).array(); 
+				return new IntegerReply(Integer.valueOf(new String(intValue, ENCODING)));
+				
+			}
+			
 			return null;
 		}
 		
+		/**
+		 * Expected format:
+		 * ${attribute length}CR+LF{attribute}CR+LF
+		 */
 		protected BulkReply decodeBulkReply(ByteBuf in) {
 			return null;
 		}
