@@ -15,7 +15,7 @@ import com.mmmthatsgoodcode.redis.protocol.Command;
 import com.mmmthatsgoodcode.redis.protocol.Reply;
 import com.mmmthatsgoodcode.redis.protocol.reply.*;
 
-public abstract class AbstractReply<T> extends Protocol implements Reply<T> {
+public abstract class AbstractReply<T> implements Reply<T> {
 	
 	private final static Logger LOG = LoggerFactory.getLogger(AbstractReply.class);
 	
@@ -73,14 +73,13 @@ public abstract class AbstractReply<T> extends Protocol implements Reply<T> {
 		
 	}
 	
-	protected final ByteBuf in;
 	protected ReplyValue<T> value = ReplyValue.none();
 	protected Command command = null;
 	
-	public AbstractReply(ByteBuf in) {
-		this.in = in;
-
-	}
+//	public AbstractReply(ByteBuf in) {
+//		this.in = in;
+//
+//	}
 	
 	/* (non-Javadoc)
 	 * @see com.mmmthatsgoodcode.redis.protocol.Reply#value()
@@ -100,28 +99,6 @@ public abstract class AbstractReply<T> extends Protocol implements Reply<T> {
 	 */
 	@Override
 	public abstract boolean decode();
-
-	
-	/**
-	 * Infer the type of the Redis Reply by the first byte in this ByteBuf
-	 * @param in
-	 * @return Inferred Reply type
-	 */
-	public static final Reply infer(ByteBuf in) {
-		
-		byte hint = in.readByte();
-		LOG.debug("Looking at hint {}", new String(new byte[]{hint}));
-		
-		if (hint == ReplyHintBytes.STATUS) return new StatusReply(in);
-		if (hint == ReplyHintBytes.ERROR) return new ErrorReply(in);
-		if (hint == ReplyHintBytes.INTEGER) return new IntegerReply(in);
-		if (hint == ReplyHintBytes.BULK) return new BulkReply(in);
-		if (hint == ReplyHintBytes.MULTI) return new MultiBulkReply(in);
-		
-		LOG.debug("Redis reply \"{}\" not recognized", new String(new byte[]{hint}));
-		return null;
-		
-	}
 	
 	/* (non-Javadoc)
 	 * @see com.mmmthatsgoodcode.redis.protocol.Reply#setCommand(com.mmmthatsgoodcode.redis.protocol.Command)
