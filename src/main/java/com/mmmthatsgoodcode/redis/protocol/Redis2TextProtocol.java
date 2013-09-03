@@ -83,13 +83,13 @@ public class Redis2TextProtocol implements Protocol {
 		
 		@Override
 		public ByteBuf encode(Exec command) {
-			return encodeNoArgCommand(command, commandNames.get(Commands.EXEC));
+			return encodeNoArgCommand(command, commandNames.get(CommandType.EXEC));
 		}
 
 		@Override
 		public ByteBuf encode(Exists command) {
 			EncodeHelper out = new EncodeHelper(Redis2TextProtocol.this.getByteBufAllocator().buffer());
-			out.addArg(commandNames.get(Commands.EXISTS));
+			out.addArg(commandNames.get(CommandType.EXISTS));
 			out.addArg(command.getKey().getBytes(ENCODING));
 			return out.buffer();
 		}
@@ -97,27 +97,25 @@ public class Redis2TextProtocol implements Protocol {
 		@Override
 		public ByteBuf encode(Get command) {
 			EncodeHelper out = new EncodeHelper(Redis2TextProtocol.this.getByteBufAllocator().buffer());
-			out.addArg(commandNames.get(Commands.GET));
+			out.addArg(commandNames.get(CommandType.GET));
 			out.addArg(command.getKey().getBytes(ENCODING));
 			return out.buffer();
 		}
 
 		@Override
 		public ByteBuf encode(Multi command) {
-			return encodeNoArgCommand(command, commandNames.get(Commands.MULTI));
+			return encodeNoArgCommand(command, commandNames.get(CommandType.MULTI));
 		}
 		
-
-
 		@Override
 		public ByteBuf encode(Ping command) {
-			return encodeNoArgCommand(command, commandNames.get(Commands.PING));
+			return encodeNoArgCommand(command, commandNames.get(CommandType.PING));
 		}
 
 		@Override
 		public ByteBuf encode(Set command) {
 			EncodeHelper out = new EncodeHelper(Redis2TextProtocol.this.getByteBufAllocator().buffer());
-			out.addArg(commandNames.get(Commands.SET));
+			out.addArg(commandNames.get(CommandType.SET));
 			out.addArg(command.getKey().getBytes(ENCODING));
 			out.addArg(command.getValue());
 
@@ -131,7 +129,7 @@ public class Redis2TextProtocol implements Protocol {
 
 		@Override
 		public ByteBuf encode(Watch command) {
-			return encodeNoArgCommand(command, commandNames.get(Commands.PING));
+			return encodeNoArgCommand(command, commandNames.get(CommandType.PING));
 		}	
 		
 		private ByteBuf encodeNoArgCommand(Command command, byte[] commandName) {
@@ -195,32 +193,56 @@ public class Redis2TextProtocol implements Protocol {
 			
 		}	
 		
-		protected Replies infer(ByteBuf in) {
+		/**
+		 * Figure out what kind of Reply is in the buffer
+		 * @param in
+		 * @return
+		 */
+		protected ReplyType infer(ByteBuf in) {
 			byte hint = in.readByte();
 			
-			if (hint == ReplyHintBytes.STATUS) return Replies.STATUS;
-			if (hint == ReplyHintBytes.ERROR) return Replies.ERROR;
-			if (hint == ReplyHintBytes.INTEGER) return Replies.INTEGER;
-			if (hint == ReplyHintBytes.BULK) return Replies.BULK;
-			if (hint == ReplyHintBytes.MULTI) return Replies.MULTI_BULK;
+			if (hint == ReplyHintBytes.STATUS) return ReplyType.STATUS;
+			if (hint == ReplyHintBytes.ERROR) return ReplyType.ERROR;
+			if (hint == ReplyHintBytes.INTEGER) return ReplyType.INTEGER;
+			if (hint == ReplyHintBytes.BULK) return ReplyType.BULK;
+			if (hint == ReplyHintBytes.MULTI) return ReplyType.MULTI_BULK;
 			
 			if (LOG.isDebugEnabled()) LOG.debug("Redis reply \"{}\" not recognized", new String(new byte[]{hint}));
+			return ReplyType.UNKNOWN;
+		}
+		
+		/**
+		 * Decode contents of buffer in to an instance of StatusReply
+		 * Expected format:
+		 * +{status reply}CR+LF
+		 */
+		protected StatusReply decodeStatusReply(ByteBuf in) {
+			// there is at least one delimiter in the buffer - we can do the decoding
+			if (in.forEachByte(HAS_DELIMITER) != -1) {
+				byte[] statusCode = in.readBytes( in.forEachByte(HAS_DELIMITER) - in.readerIndex() ).array(); // read up to the new line..
+				StatusReply statusReply = new StatusReply(new String(statusCode));
+				if (LOG.isDebugEnabled()) LOG.debug("Decoded status reply: \"{}\"", statusReply.value());
+				return statusReply;
+			}
+			
 			return null;
 		}
 		
-		protected StatusReply decodeStatusReply(ByteBuf in) {
-			// there is at least one delimiter in the buffer - we can do the decoding
-			if (this.in.forEachByte(HAS_DELIMITER) != -1) {
-				byte[] statusCode = this.in.readBytes( this.in.forEachByte(HAS_DELIMITER) - this.in.readerIndex() ).array(); // read up to the new line..
-				setValue(new String(statusCode));
-				LOG.debug("Decoded status reply: \"{}\"", value());
-				return true;
+		/**
+		 * Expected format:
+		 * -{error type} {error message}DELIMITER
+		 */
+		protected ErrorReply decodeErrorReply(ByteBuf in) {
+			
+			if (in.forEachByte(HAS_DELIMITER) != -1) {
+				// there is a delimiter in this, we're good to parse
+				byte[] errType = in.readBytes( in.forEachByte(ByteBufProcessor.FIND_LINEAR_WHITESPACE)-in.readerIndex()+1 ).array(); // read up to the first white space
+				// move reader beyond the whitespace
+				byte[] errMessage = in.readBytes( in.forEachByte(HAS_DELIMITER)-in.readerIndex() ).array(); // read up to the next white space
+				return new ErrorReply(new String(errType, ENCODING), new String(errMessage, ENCODING));
+				
 			}
 			
-			return false;
-		}
-		
-		protected ErrorReply decodeErrorReply(ByteBuf in) {
 			return null;
 		}
 		
@@ -255,15 +277,15 @@ public class Redis2TextProtocol implements Protocol {
 	
 
 
-	private static final Map<Commands, byte[]> commandNames = new ImmutableMap.Builder<Commands, byte[]>()
-			.put(Commands.GET, "GET".getBytes(ENCODING))
-			.put(Commands.EXEC, "EXEC".getBytes(ENCODING))
-			.put(Commands.EXISTS, "EXISTS".getBytes(ENCODING))
-			.put(Commands.MULTI, "MULTI".getBytes(ENCODING))
-			.put(Commands.PING, "PING".getBytes(ENCODING))
-			.put(Commands.SET, "SET".getBytes(ENCODING))
-			.put(Commands.SETNX, "SETNX".getBytes(ENCODING))
-			.put(Commands.WATCH, "WATCH".getBytes(ENCODING))
+	private static final Map<CommandType, byte[]> commandNames = new ImmutableMap.Builder<CommandType, byte[]>()
+			.put(CommandType.GET, "GET".getBytes(ENCODING))
+			.put(CommandType.EXEC, "EXEC".getBytes(ENCODING))
+			.put(CommandType.EXISTS, "EXISTS".getBytes(ENCODING))
+			.put(CommandType.MULTI, "MULTI".getBytes(ENCODING))
+			.put(CommandType.PING, "PING".getBytes(ENCODING))
+			.put(CommandType.SET, "SET".getBytes(ENCODING))
+			.put(CommandType.SETNX, "SETNX".getBytes(ENCODING))
+			.put(CommandType.WATCH, "WATCH".getBytes(ENCODING))
 			.build();
 
 	

@@ -14,27 +14,9 @@ public class StatusReply extends AbstractReply<String> {
 
 	private static final Logger LOG = LoggerFactory.getLogger(StatusReply.class);
 	
-	public StatusReply(ByteBuf in) {
-		super(in);
+	public StatusReply(String statusCode) {
+		setValue(statusCode);
 	}
 
-	/**
-	 * Expected format:
-	 * +{status reply}CR+LF
-	 */
-	@Override
-	public boolean decode() {
-		
-		// there is at least one delimiter in the buffer - we can do the decoding
-		if (this.in.forEachByte(HAS_DELIMITER) != -1) {
-			byte[] statusCode = this.in.readBytes( this.in.forEachByte(HAS_DELIMITER) - this.in.readerIndex() ).array(); // read up to the new line..
-			setValue(new String(statusCode));
-			LOG.debug("Decoded status reply: \"{}\"", value());
-			return true;
-		}
-		
-		return false;
-	}	
-	
 
 }

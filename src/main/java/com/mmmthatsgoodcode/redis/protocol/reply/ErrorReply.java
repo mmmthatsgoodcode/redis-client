@@ -7,30 +7,31 @@ import com.mmmthatsgoodcode.redis.protocol.model.AbstractReply;
 
 public class ErrorReply extends AbstractReply<String> {
 
-	public ErrorReply(ByteBuf in) {
-		super(in);
-		// TODO Auto-generated constructor stub
+	private final String errorType, errorMessage;
+	
+	public ErrorReply(String errorType, String errorMessage) {
+		this.errorType = errorType;
+		this.errorMessage = errorMessage;
+		setValue(this.errorType+": "+this.errorMessage);
 	}
 
-	/**
-	 * Expected format:
-	 * -{error type} {error message}DELIMITER
-	 */
-	@Override
-	public boolean decode() {
+	public String getErrorType() {
+		return errorType;
+	}
+	
+	public String getErrorMessage() {
+		return errorMessage;
+	}
+	
+	public boolean equals(Object object) {
+		if (!(object instanceof ErrorReply)) return false;
+		ErrorReply other = (ErrorReply) object;
 		
-		if (this.in.forEachByte(HAS_DELIMITER) != -1) {
-			// there is a delimiter in this, we're good to parse
-			byte[] errType = this.in.readBytes( this.in.forEachByte(ByteBufProcessor.FIND_LINEAR_WHITESPACE)-this.in.readerIndex() ).array(); // read up to the first white space
-//			System.out.println("Err code: "+new String(errType));
-			// move reader beyond the whitespace
-			byte[] errMessage = this.in.readBytes( this.in.forEachByte(HAS_DELIMITER)-this.in.readerIndex() ).array(); // read up to the next white space
-			setValue(new String(errType, ENCODING)+": "+new String(errMessage, ENCODING));
-			
-			return true;
-		}
+		System.out.println(other);
+		System.out.println(this);
+
+		return other.getErrorMessage().equals(getErrorMessage()) && other.getErrorType().equals(getErrorType());
 		
-		return false;
-	}	
+ 	}
 	
 }

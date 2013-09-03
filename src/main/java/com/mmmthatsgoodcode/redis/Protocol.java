@@ -17,8 +17,8 @@ import io.netty.buffer.PooledByteBufAllocator;
 
 public interface Protocol {
 	
-	public enum Replies { BULK, ERROR, INTEGER, MULTI_BULK, STATUS, UNKNOWN }
-	public enum Commands { GET, SET, EXEC, EXISTS, MULTI, PING, SETNX, WATCH }
+	public enum ReplyType { BULK, ERROR, INTEGER, MULTI_BULK, STATUS, UNKNOWN }
+	public enum CommandType { GET, SET, EXEC, EXISTS, MULTI, PING, SETNX, WATCH }
 	
 	public ByteBufAllocator getByteBufAllocator();
 	
