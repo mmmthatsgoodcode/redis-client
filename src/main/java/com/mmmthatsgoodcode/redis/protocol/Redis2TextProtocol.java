@@ -6,6 +6,8 @@ import io.netty.buffer.ByteBufProcessor;
 import io.netty.buffer.PooledByteBufAllocator;
 
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import javax.naming.OperationNotSupportedException;
@@ -27,6 +29,7 @@ import com.mmmthatsgoodcode.redis.protocol.command.Set;
 import com.mmmthatsgoodcode.redis.protocol.command.Setex;
 import com.mmmthatsgoodcode.redis.protocol.command.Setnx;
 import com.mmmthatsgoodcode.redis.protocol.command.Watch;
+import com.mmmthatsgoodcode.redis.protocol.model.AbstractReply;
 import com.mmmthatsgoodcode.redis.protocol.model.AbstractReply.ReplyHintBytes;
 import com.mmmthatsgoodcode.redis.protocol.reply.BulkReply;
 import com.mmmthatsgoodcode.redis.protocol.reply.ErrorReply;
@@ -82,98 +85,101 @@ public class Redis2TextProtocol implements Protocol {
 		
 		
 		@Override
-		public ByteBuf encode(Exec command) {
-			return encodeNoArgCommand(command, commandNames.get(CommandType.EXEC));
+		public void encode(Exec command, ByteBuf out) {
+			encodeNoArgCommand(command, out, commandNames.get(CommandType.EXEC));
 		}
 
 		@Override
-		public ByteBuf encode(Exists command) {
-			EncodeHelper out = new EncodeHelper(Redis2TextProtocol.this.getByteBufAllocator().buffer());
-			out.addArg(commandNames.get(CommandType.EXISTS));
-			out.addArg(command.getKey().getBytes(ENCODING));
-			return out.buffer();
+		public void encode(Exists command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArg(commandNames.get(CommandType.EXISTS));
+			helper.addArg(command.getKey().getBytes(ENCODING));
 		}
 
 		@Override
-		public ByteBuf encode(Get command) {
-			EncodeHelper out = new EncodeHelper(Redis2TextProtocol.this.getByteBufAllocator().buffer());
-			out.addArg(commandNames.get(CommandType.GET));
-			out.addArg(command.getKey().getBytes(ENCODING));
-			return out.buffer();
+		public void encode(Get command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArg(commandNames.get(CommandType.GET));
+			helper.addArg(command.getKey().getBytes(ENCODING));
 		}
 
 		@Override
-		public ByteBuf encode(Multi command) {
-			return encodeNoArgCommand(command, commandNames.get(CommandType.MULTI));
+		public void encode(Multi command, ByteBuf out) {
+			encodeNoArgCommand(command, out, commandNames.get(CommandType.MULTI));
 		}
 		
 		@Override
-		public ByteBuf encode(Ping command) {
-			return encodeNoArgCommand(command, commandNames.get(CommandType.PING));
+		public void encode(Ping command, ByteBuf out) {
+			encodeNoArgCommand(command, out, commandNames.get(CommandType.PING));
 		}
 
 		@Override
-		public ByteBuf encode(Set command) {
-			EncodeHelper out = new EncodeHelper(Redis2TextProtocol.this.getByteBufAllocator().buffer());
-			out.addArg(commandNames.get(CommandType.SET));
-			out.addArg(command.getKey().getBytes(ENCODING));
-			out.addArg(command.getValue());
+		public void encode(Set command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArg(commandNames.get(CommandType.SET));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getValue());
 
-			return out.buffer();
 		}
 
 		@Override
-		public ByteBuf encode(Setnx command) {
-			return encode((Set) command);
+		public void encode(Setnx command, ByteBuf out) {
+			encode((Set) command, out);
 		}
 
 		@Override
-		public ByteBuf encode(Watch command) {
-			return encodeNoArgCommand(command, commandNames.get(CommandType.PING));
+		public void encode(Watch command, ByteBuf out) {
+			encodeNoArgCommand(command, out, commandNames.get(CommandType.PING));
 		}	
 		
-		private ByteBuf encodeNoArgCommand(Command command, byte[] commandName) {
-			EncodeHelper out = new EncodeHelper(Redis2TextProtocol.this.getByteBufAllocator().buffer());
-			out.addArg(commandName);
-			return out.buffer();
+		private void encodeNoArgCommand(Command command, ByteBuf out, byte[] commandName) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArg(commandName);
 		}
 
 		@Override
-		public ByteBuf encode(Setex command) {
-			EncodeHelper out = new EncodeHelper(Redis2TextProtocol.this.getByteBufAllocator().buffer());
-			out.addArg(command.getName());
-			out.addArg(command.getKey().getBytes(ENCODING));
-			out.addArg(String.valueOf(command.getExpiry()).getBytes(ENCODING));
-			out.addArg(command.getValue());
+		public void encode(Setex command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArg(commandNames.get(CommandType.SETEX));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(String.valueOf(command.getExpiry()).getBytes(ENCODING));
+			helper.addArg(command.getValue());
 			
-			return out.buffer();
 		}
 		
-		public ByteBuf encode(Command command) throws OperationNotSupportedException {
+		public void encode(Command command, ByteBuf out) throws OperationNotSupportedException {
 			throw new OperationNotSupportedException();
 		}
 
 		@Override
-		public ByteBuf encodeTransaction(Transaction transaction) throws OperationNotSupportedException {
-			ByteBuf out = byteBufAllocator.buffer();
+		public void encodeTransaction(Transaction transaction, ByteBuf out) throws OperationNotSupportedException {
 			
 			for (Command command:transaction) {
-				ByteBuf rbuff = encode(command);
-				out.writeBytes(rbuff);
-				rbuff.release();
+				out.writeBytes(out);
 			}
 			
-			return out;
 		}
 		
 	}
 	
 	public class Decoder implements Protocol.Decoder {
 
+		private ReplyType currentReplyType = null; // stores the result of infer() for this decoder
+		private int currentBytesExpected = 0; // how many bytes we are waiting to become available in this buffer
+		private int paramLength = 0; // for multi bulk replies, the number of expected parameters
+		private List<Reply> replies = new ArrayList<Reply>(); // for multi bulk replies, holds the completed reply objects
+		private Decoder currentMultiBulkReplyDecoder = null; // for multi bulk replies, holds the decoder that is decoding the current reply
+		
+		public ReplyType replyType() {
+			return currentReplyType;
+		}
+		
 		@Override
 		public Reply decode(ByteBuf in) throws UnrecognizedReplyException {
 			
-			switch(infer(in)) {
+			if (currentReplyType == null) currentReplyType = infer(in);
+			
+			switch(currentReplyType) {
 			
 				case STATUS:
 					return decodeStatusReply(in);
@@ -208,6 +214,7 @@ public class Redis2TextProtocol implements Protocol {
 			if (hint == ReplyHintBytes.MULTI) return ReplyType.MULTI_BULK;
 			
 			if (LOG.isDebugEnabled()) LOG.debug("Redis reply \"{}\" not recognized", new String(new byte[]{hint}));
+			in.readerIndex(in.readerIndex()-1);
 			return ReplyType.UNKNOWN;
 		}
 		
@@ -266,10 +273,111 @@ public class Redis2TextProtocol implements Protocol {
 		 * ${attribute length}CR+LF{attribute}CR+LF
 		 */
 		protected BulkReply decodeBulkReply(ByteBuf in) {
+			// wait for a delimiter to come
+			if (in.forEachByte(ByteBufProcessor.FIND_CRLF) != -1) {
+				
+				if (currentBytesExpected == 0) {
+					LOG.debug("Starting from index {} ( {} readable )", in.readerIndex(), in.readableBytes());
+		
+//					LOG.debug("trying to decode {}", new String(UnpooledByteBufAllocator.DEFAULT.heapBuffer().writeBytes(in, in.readerIndex(), in.readableBytes()).array()));
+					
+					// so, there is at least one delimiter here, but do we have attribute length + 2 more bytes to read?
+					byte[] attrLength = in.readBytes( in.forEachByte(HAS_DELIMITER) - in.readerIndex() ).array();
+					currentBytesExpected = Integer.valueOf( new String(attrLength) ); 
+				}
+				
+				LOG.debug("Expecting {} bytes", currentBytesExpected);
+				
+				if (currentBytesExpected == -1) {
+					// no result
+					currentBytesExpected = 0;
+
+					return new BulkReply(null);// done with this reply
+				} else if (in.readableBytes() >= currentBytesExpected+(DELIMITER.length*2)) { // there should be 2x delimiters in here, plus the content
+					LOG.debug("There are sufficient bytes in this buffer to finish decoding");
+					// we have the remainder of the reply in this buffer. Finish reading.
+					in.readerIndex(in.readerIndex()+DELIMITER.length); // move reader index beyond the CRLF
+					byte[] attribute = in.readBytes(currentBytesExpected).array();
+					currentBytesExpected = 0;
+
+					return new BulkReply(new String(attribute)); // done with this reply
+				}
+				// expected reply length isnt -1 and buffer contains fewer bytes. Wait for another invocation of decode() 
+				
+				LOG.debug("Waiting for more data in the buffer");
+				
+			}
+			
 			return null;
 		}
 		
+		/**
+		 * Expected format:
+		 * *{number of bulk replies expected}CR+LF
+		 * ${attribute length}CR+LF{attribute}CR+LF
+		 * .
+		 * .
+		 * ${attribute length}CR+LF{attribute}CR+LF
+		 * @throws UnrecognizedReplyException 
+		 */
 		protected MultiBulkReply decodeMultiBulkReply(ByteBuf in) {
+			// wait for a delimiter to come
+			if (in.forEachByte(HAS_DELIMITER) != -1) {
+				
+				// read parameter count if we haven't already
+				if (paramLength == 0) {
+					byte[] paramLengthBytes = in.readBytes( in.forEachByte(HAS_DELIMITER) - in.readerIndex() ).array();
+					paramLength = Integer.valueOf( new String(paramLengthBytes, ENCODING) );
+					if (paramLength == -1) {
+						LOG.debug("Null MultiBulk reply!");
+						return new MultiBulkReply(new ArrayList<Reply>());
+					}
+					LOG.debug("Expecting {} Replies", paramLength);
+					in.readerIndex(in.readerIndex()+2); // move reader index beyond the CRLF
+
+					LOG.debug("Creating new Decoder for reply in MultiBulkReply");
+
+					currentMultiBulkReplyDecoder = new Decoder();
+				}
+								
+				while (replies.size() < paramLength && in.readableBytes() > 0) {
+					LOG.debug("Decoding Reply {} of {} in MultiBulkReply", replies.size()+1, paramLength);
+
+					try {
+						
+						Reply currentMultiBulkReply = currentMultiBulkReplyDecoder.decode(in);
+						if (currentMultiBulkReply != null) {
+							replies.add(currentMultiBulkReply);
+	
+							// see if we need to prepare the next reply
+							if (replies.size() != paramLength) {
+								in.readerIndex(in.readerIndex()+DELIMITER.length); // move reader index beyond the CRLF
+								if (in.readableBytes() > 1) currentMultiBulkReplyDecoder = new Decoder();
+								else return null; // not enough bytes in buffer to infer the next reply.. wait for more.
+	
+							} else {
+								
+								// done!
+								return new MultiBulkReply(replies);
+							}
+							
+						} else {
+							// there wasnt enough data in here for the bulk reply to decode. 
+							LOG.debug("Waiting for more data");
+							return null;
+						}
+						
+					} catch (UnrecognizedReplyException e) {
+						// thats fine
+						LOG.debug("Infer threw UnrecognizedReplyException, waiting for more data");
+						return null;
+					}
+									
+				}
+				
+			}
+			
+			
 			return null;
 		}
 		
@@ -304,7 +412,6 @@ public class Redis2TextProtocol implements Protocol {
 			.build();
 
 	
-	private Decoder decoder = new Decoder();
 	private Encoder encoder = new Encoder();
 	
 	public Redis2TextProtocol() {
@@ -323,7 +430,9 @@ public class Redis2TextProtocol implements Protocol {
 
 	@Override
 	public Decoder getDecoder() {
-		return decoder;
+		
+		return new Decoder();
+		
 	}
 
 	

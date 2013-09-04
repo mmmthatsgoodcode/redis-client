@@ -7,8 +7,8 @@ import org.slf4j.LoggerFactory;
 
 import com.mmmthatsgoodcode.redis.Client;
 import com.mmmthatsgoodcode.redis.Connection;
+import com.mmmthatsgoodcode.redis.Protocol;
 import com.mmmthatsgoodcode.redis.protocol.model.AbstractCommand;
-import com.mmmthatsgoodcode.redis.protocol.model.AbstractCommand.EncodeHelper;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -20,10 +20,10 @@ import io.netty.handler.codec.MessageToByteEncoder;
 public class CommandEncoder extends MessageToByteEncoder<AbstractCommand> {
 
 	private static final Logger LOG = LoggerFactory.getLogger(CommandEncoder.class);
-	private final Client client;
+	private final Protocol protocol;
 	
-	public CommandEncoder(Client client) {
-		this.client = client;
+	public CommandEncoder(Protocol protocol) {
+		this.protocol = protocol;
 	}
 	
 	@Override
@@ -32,16 +32,8 @@ public class CommandEncoder extends MessageToByteEncoder<AbstractCommand> {
 		
 		LOG.debug("Encoding outbound command {}", msg);
 		
-		EncodeHelper helper = new AbstractCommand.EncodeHelper(out);
-		ByteBuf buf = msg.encode();
-		if (msg.getArgc() > 0) helper.addArgc(msg.getArgc());
+		protocol.getEncoder().encode(msg, out);
 		LOG.debug("Encoded command {}", msg);
-		helper.buffer().writeBytes(buf);
-		buf.release();
-		
-//		ctx.flush();
-		
-		LOG.debug("Sent command {}", msg);
 		
 	}
 	

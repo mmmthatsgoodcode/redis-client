@@ -6,6 +6,7 @@ import javax.naming.OperationNotSupportedException;
 
 import com.mmmthatsgoodcode.redis.client.Transaction;
 import com.mmmthatsgoodcode.redis.client.UnrecognizedReplyException;
+import com.mmmthatsgoodcode.redis.protocol.Command;
 import com.mmmthatsgoodcode.redis.protocol.Reply;
 import com.mmmthatsgoodcode.redis.protocol.command.*;
 import com.mmmthatsgoodcode.redis.protocol.reply.*;
@@ -18,29 +19,31 @@ import io.netty.buffer.PooledByteBufAllocator;
 public interface Protocol {
 	
 	public enum ReplyType { BULK, ERROR, INTEGER, MULTI_BULK, STATUS, UNKNOWN }
-	public enum CommandType { GET, SET, EXEC, EXISTS, MULTI, PING, SETNX, WATCH }
+	public enum CommandType { GET, SET, SETEX, EXEC, EXISTS, MULTI, PING, SETNX, WATCH }
 	
 	public ByteBufAllocator getByteBufAllocator();
 	
 	public interface Encoder {
 
-		public ByteBuf encode(Exec command);
-		public ByteBuf encode(Exists command);
-		public ByteBuf encode(Get command);
-		public ByteBuf encode(Multi command);
-		public ByteBuf encode(Ping command);
-		public ByteBuf encode(Set command);
-		public ByteBuf encode(Setex command);
-		public ByteBuf encode(Setnx command);
-		public ByteBuf encode(Watch command);		
-		public ByteBuf encodeTransaction(Transaction command) throws OperationNotSupportedException;
+		public void encode(Exec command, ByteBuf out);
+		public void encode(Exists command, ByteBuf out);
+		public void encode(Get command, ByteBuf out);
+		public void encode(Multi command, ByteBuf out);
+		public void encode(Ping command, ByteBuf out);
+		public void encode(Set command, ByteBuf out);
+		public void encode(Setex command, ByteBuf out);
+		public void encode(Setnx command, ByteBuf out);
+		public void encode(Watch command, ByteBuf out);	
+		public void encode(Command command, ByteBuf out) throws OperationNotSupportedException;		
+		public void encodeTransaction(Transaction command, ByteBuf out) throws OperationNotSupportedException;
 		
 	}
 	
 	public interface Decoder {
 
 		public Reply decode(ByteBuf in) throws UnrecognizedReplyException;
-
+		public ReplyType replyType();
+		
 	}
 	
 

@@ -72,7 +72,7 @@ public abstract class AbstractClientTest {
 //					System.out.println( "getting "+id);
 					Context timer = null;
 					try {
-						String setreply = CLIENT.send(new Set(id, value)).get().value();
+						String setreply = CLIENT.send(new Set(id, value.getBytes())).get().value();
 
 //						System.out.println( id+" value - "+CLIENT.send(new Get(id)).get(1, TimeUnit.SECONDS).value() );
 						timer = getLatency.time();
@@ -115,7 +115,7 @@ public abstract class AbstractClientTest {
 		for (int r=1; r <= 1000; r++) {
 
 			final String id = UUID.randomUUID().toString();
-			replies.add( CLIENT.send(new Setex(id, "i'm really really random", 5000), new Runnable() {
+			replies.add( CLIENT.send(new Setex(id, "i'm really really random".getBytes(), 5000), new Runnable() {
 
 				@Override
 				public void run() {
@@ -149,7 +149,7 @@ public abstract class AbstractClientTest {
 		for (int r=1; r <= 1000; r++) {
 
 			String id = UUID.randomUUID().toString();
-			String value = "value-for-"+id;
+			byte[] value = ("value-for-"+id).getBytes();
 			Context timer = null;
 			
 			try {
@@ -186,7 +186,7 @@ public abstract class AbstractClientTest {
 					String id = UUID.randomUUID().toString();
 //					System.out.println( "setting "+id);
 //					System.out.println( "set reply - "+CLIENT.send(new Set(id, "value-for-"+id)).get().value() );
-					String value = "value-for-"+id;
+					byte[] value = ("value-for-"+id).getBytes();
 					
 //					System.out.println( "getting "+id);
 					Context timer = null;

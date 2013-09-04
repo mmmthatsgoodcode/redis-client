@@ -12,22 +12,6 @@ public class Get extends KeyedCommand<BulkReply> {
 	
 	public Get(String key) {
 		super(key);
-		setArgc(2);
-
 	}
-	
-	@Override
-	public ByteBuf encode() {
-		EncodeHelper out = new EncodeHelper(byteBufAllocator.buffer());
-		out.addArg(NAME);
-		out.addArg(key.getBytes(ENCODING));
-		return out.buffer();
-	}
-
-	@Override
-	public byte[] getName() {
-		return NAME;
-	}
-
 
 }

@@ -23,12 +23,4 @@ public class ErrorReply extends AbstractReply<String> {
 		return errorMessage;
 	}
 	
-	public boolean equals(Object object) {
-		if (!(object instanceof ErrorReply)) return false;
-		ErrorReply other = (ErrorReply) object;
-
-		return other.getErrorMessage().equals(getErrorMessage()) && other.getErrorType().equals(getErrorType());
-		
- 	}
-	
 }

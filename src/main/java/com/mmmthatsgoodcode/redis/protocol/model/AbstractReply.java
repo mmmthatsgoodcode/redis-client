@@ -111,4 +111,13 @@ public abstract class AbstractReply<T> implements Reply<T> {
 		
 	}
 	
+	public boolean equals(Object object) {
+		if (this.getClass().isAssignableFrom(object.getClass()) == false) return false;
+		
+		AbstractReply other = (AbstractReply) object;
+		
+		return other.value().equals(other.value());
+		
+	}
+	
 }

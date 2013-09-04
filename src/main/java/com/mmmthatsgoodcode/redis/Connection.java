@@ -57,7 +57,7 @@ public class Connection  {
 	public static final AttributeKey<Connection> CONNECTION = new AttributeKey<Connection>("connection");
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public Connection(Host host, Map<ChannelOption, Object> channelOptions) {
+	public Connection(final Host host, Map<ChannelOption, Object> channelOptions) {
 		
 		this.host = host;
 		
@@ -72,8 +72,8 @@ public class Connection  {
 				ch.attr(OUTBOUND).set(new LinkedBlockingQueue<Command>());
 				ch.attr(CONNECTION).set(Connection.this);
 				
-				if (getHost().getClient().trafficLogging()) ch.pipeline().addLast(new CommandLogger(), new CommandEncoder(), new ClientWriteHandler(), new ReplyLogger(), new ReplyDecoder(), new CommandFulfiller());
-				else ch.pipeline().addLast(new CommandEncoder(), new ClientWriteHandler(), new ReplyDecoder(), new CommandFulfiller());
+				if (getHost().getClient().trafficLogging()) ch.pipeline().addLast(new CommandLogger(), new CommandEncoder(host.getClient().getProtocol()), new ClientWriteHandler(), new ReplyLogger(), new ReplyDecoder(host.getClient().getProtocol()), new CommandFulfiller());
+				else ch.pipeline().addLast(new CommandEncoder(host.getClient().getProtocol()), new ClientWriteHandler(), new ReplyDecoder(host.getClient().getProtocol()), new CommandFulfiller());
 								
 			}
 			

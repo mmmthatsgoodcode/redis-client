@@ -10,13 +10,5 @@ public class IntegerReply extends AbstractReply<Integer> {
 	public IntegerReply(Integer value) {
 		setValue(value);
 	}
-
-	public boolean equals(Object object) {
-		if (!(object instanceof IntegerReply)) return false;
-		
-		IntegerReply other = (IntegerReply) object;
-		return other.value().equals(value());
-		
-	}
 	
 }

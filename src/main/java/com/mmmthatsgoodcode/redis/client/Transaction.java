@@ -53,13 +53,6 @@ public class Transaction extends AbstractCommand<MultiBulkReply> implements Pinn
 		return this;
 	}
 
-
-	@Override
-	public String getName() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
 	@Override
 	public Host getHost() {
 		return host;

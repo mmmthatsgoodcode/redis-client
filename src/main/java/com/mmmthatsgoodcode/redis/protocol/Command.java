@@ -19,10 +19,6 @@ public interface Command<T extends Reply> {
 	 * waiting on PendingReply.get()
 	 */
 	public abstract void replyReceived(T reply);
-	public abstract String getName();
-	public abstract int getArgc();
-
-	public abstract void setArgc(int argc);
 
 	public abstract PendingReply<T> getReply();
 

@@ -10,7 +10,6 @@ import com.mmmthatsgoodcode.redis.protocol.Reply;
 
 public abstract class AbstractCommand<T extends Reply> implements Command<T> {
 	
-	protected int argc = 2;
 	protected final PendingReply<T> reply = new PendingReply<T>(this);
 
 	
@@ -21,23 +20,7 @@ public abstract class AbstractCommand<T extends Reply> implements Command<T> {
 	public void replyReceived(T reply) {
 		reply.setCommand(this);
 	}
-	
-	/* (non-Javadoc)
-	 * @see com.mmmthatsgoodcode.redis.protocol.CommandInterface#getArgc()
-	 */
-	@Override
-	public int getArgc() {
-		return argc;
-	}
-	
-	/* (non-Javadoc)
-	 * @see com.mmmthatsgoodcode.redis.protocol.CommandInterface#setArgc(int)
-	 */
-	@Override
-	public void setArgc(int argc) {
-		this.argc = argc;
-	}
-	
+
 	/* (non-Javadoc)
 	 * @see com.mmmthatsgoodcode.redis.protocol.CommandInterface#getReply()
 	 */
