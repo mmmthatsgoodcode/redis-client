@@ -112,10 +112,10 @@ public abstract class AbstractClientTest {
 		final Timer getLatency = new Timer();
 		final List<AbstractReply> replies = new ArrayList<AbstractReply>();
 
-		for (int r=1; r <= 1000; r++) {
+		for (int r=1; r <= 4; r++) {
 
 			final String id = UUID.randomUUID().toString();
-			replies.add( CLIENT.send(new Setex(id, "i'm really really random".getBytes(), 5000), new Runnable() {
+			replies.add( CLIENT.send(new Set(id, ("value-"+id).getBytes()), new Runnable() {
 
 				@Override
 				public void run() {
@@ -159,7 +159,7 @@ public abstract class AbstractClientTest {
 				System.out.println(replies);
 
 				assertEquals(replies.size(), 3);
-				assertEquals((String) replies.get(2).value(), value);
+				assertEquals((String) replies.get(2).value(), new String(value));
 			} catch (IllegalStateException | InterruptedException
 					 | TimeoutException | NoConnectionsAvailableException e) {
 				System.err.println(id+" Timed out");
@@ -200,7 +200,7 @@ public abstract class AbstractClientTest {
 								).get(5, TimeUnit.SECONDS).value();
 						timer.stop();
 						assertEquals(replies.size(), 2);
-						assertEquals((String) replies.get(1).value(), value);
+						assertEquals((String) replies.get(1).value(), new String(value));
 						
 					} catch (IllegalStateException | InterruptedException
 							 | TimeoutException | NoConnectionsAvailableException e) {

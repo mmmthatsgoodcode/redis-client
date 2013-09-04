@@ -21,21 +21,22 @@ public class ClientWriteHandler extends ChannelOutboundHandlerAdapter {
 	public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
 		
 		if (msg instanceof Transaction) {
+			
 			Transaction transaction = (Transaction) msg;
 			for (Command command:transaction) {
 				ctx.channel().attr(Connection.OUTBOUND).get().add(command);
 				ctx.write(command);
 			}
 			
-			
-			
 		} else if (msg instanceof Command) {
+			
 			AbstractCommand command = (AbstractCommand) msg;
 			ctx.channel().attr(Connection.OUTBOUND).get().add(command);
 			LOG.debug("Added pending command {} to Channel's outbound queue", command);
 			ctx.write(command);
 			
 		}
+		
 	}
 	
 }

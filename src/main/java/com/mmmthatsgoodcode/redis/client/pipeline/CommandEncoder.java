@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import com.mmmthatsgoodcode.redis.Client;
 import com.mmmthatsgoodcode.redis.Connection;
 import com.mmmthatsgoodcode.redis.Protocol;
+import com.mmmthatsgoodcode.redis.protocol.command.Ping;
 import com.mmmthatsgoodcode.redis.protocol.model.AbstractCommand;
 
 import io.netty.buffer.ByteBuf;
@@ -31,9 +32,9 @@ public class CommandEncoder extends MessageToByteEncoder<AbstractCommand> {
 			throws Exception {
 		
 		LOG.debug("Encoding outbound command {}", msg);
-		
 		protocol.getEncoder().encode(msg, out);
 		LOG.debug("Encoded command {}", msg);
+		ctx.flush();
 		
 	}
 	

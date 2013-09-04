@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import com.mmmthatsgoodcode.redis.Protocol;
 import com.mmmthatsgoodcode.redis.Protocol.Decoder;
+import com.mmmthatsgoodcode.redis.client.UnrecognizedReplyException;
 import com.mmmthatsgoodcode.redis.protocol.Reply;
 import com.mmmthatsgoodcode.redis.protocol.model.AbstractCommand;
 import com.mmmthatsgoodcode.redis.protocol.model.AbstractReply;
@@ -45,33 +46,40 @@ public class ReplyDecoder extends ByteToMessageDecoder {
 			}
 
 			// decode contents from the buffer
-			Reply currentReply = currentDecoder.decode(in);
-			if (currentReply != null) {
-				// decoder finished
-				replies.add(currentReply);
-				LOG.debug("Decoded reply: {}", currentReply.value());
-				currentDecoder = protocol.getDecoder();
-
-				LOG.debug("Buffer after decode: {}/{}", in.readerIndex(), in.readableBytes());
-				// see if we are done completely decoding the buffer
-				if (in.readableBytes() == 0) {
-					LOG.debug("End of buffer");
-					in.clear();
+//			try {
+				Reply currentReply = currentDecoder.decode(in);
+				if (currentReply != null) {
+					// decoder finished
+					replies.add(currentReply);
+					LOG.debug("Decoded reply: {}", currentReply.value());
+					currentDecoder = protocol.getDecoder();
+	
+					LOG.debug("Buffer after decode: {}/{}", in.readerIndex(), in.readableBytes());
+					// see if we are done completely decoding the buffer
+					if (in.readableBytes() == 0) {
+						LOG.debug("End of buffer");
+						in.clear();
+						
+						ctx.fireChannelRead(replies);
+						return;
+	
+					}
 					
-					ctx.fireChannelRead(replies);
+					// there are still bytes in the buffer after decode, that are not CRLF
+					LOG.debug("Still {} bytes buffered to go..", in.readableBytes());
+					
+				} else {
+	
+					// bytes in buffer were not enough to decode a reply, continue..
 					return;
-
+				
 				}
-				
-				// there are still bytes in the buffer after decode, that are not CRLF
-				LOG.debug("Still {} bytes buffered to go..", in.readableBytes());
-				
-			} else {
-
-				// bytes in buffer were not enough to decode a reply, continue..
-				return;
 			
-			}
+//			} catch (UnrecognizedReplyException e) {
+//				
+//				return;
+//				
+//			}
 
 		
 		}

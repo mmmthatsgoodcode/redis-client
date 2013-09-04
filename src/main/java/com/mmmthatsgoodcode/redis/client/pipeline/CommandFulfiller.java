@@ -1,5 +1,6 @@
 package com.mmmthatsgoodcode.redis.client.pipeline;
 
+import java.util.Iterator;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -7,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import com.mmmthatsgoodcode.redis.Connection;
 import com.mmmthatsgoodcode.redis.protocol.Command;
+import com.mmmthatsgoodcode.redis.protocol.Reply;
 import com.mmmthatsgoodcode.redis.protocol.model.AbstractReply;
 
 import io.netty.channel.ChannelHandlerAdapter;
@@ -36,21 +38,29 @@ public class CommandFulfiller extends ChannelInboundHandlerAdapter {
     			
     			List list = (List) msg;
     			LOG.debug("Finalizing {} commands", ((List) msg).size());
-    			for(Object obj:list) {
+    			
+    			Iterator<List> repliesIterator = list.iterator();
+    			while(repliesIterator.hasNext()) {
     				
-    				AbstractReply reply = (AbstractReply) obj;
+    				Reply reply = (Reply) repliesIterator.next();
+    				LOG.debug("Found Reply {}", reply);
     				
     				// the assumption here is, Redis is sending replies in the order of commands sent
     				Command command = ctx.channel().attr(Connection.OUTBOUND).get().poll();
     	    		if (command != null) {
+    					LOG.debug("Finalizing command {}", command);
     					command.getReply().finalize(reply);
-    					LOG.debug("Finalized command {}", command);
-    	    			
+    	    			repliesIterator.remove();
+    					
+    	    		} else {
+    	    			LOG.error("Orphaned reply {}", reply);
+    	    			repliesIterator.remove();
+
     	    		}
     			}
     			
     			if (ctx.channel().attr(Connection.OUTBOUND).get().size() > 0) LOG.debug("{} commands still pending", ctx.channel().attr(Connection.OUTBOUND).get().size());
-    			list.clear();
+//    			list.clear();
     			
     		}
     	
@@ -59,7 +69,6 @@ public class CommandFulfiller extends ChannelInboundHandlerAdapter {
     @Override
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
     	
-    	LOG.warn("?!");
     	Connection connection = ctx.channel().attr(Connection.CONNECTION).get();
     	if (connection != null) connection.discard(cause);
     	

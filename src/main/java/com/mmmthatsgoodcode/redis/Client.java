@@ -193,7 +193,10 @@ public class Client {
 		return send(command);
 	}
 	
-
+	public <T extends Reply> PendingReply<T> send(KeyedCommand<T> keyedCommand, Runnable...onComplete) throws NoConnectionsAvailableException {
+		keyedCommand.getReply().onComplete(onComplete);
+		return send(keyedCommand);
+	}
 	
 	public PendingReply<MultiBulkReply> send(Transaction transaction, Runnable...onComplete) throws NoConnectionsAvailableException {
 		transaction.getReply().onComplete(onComplete);
@@ -214,7 +217,11 @@ public class Client {
 
 	public <T extends Reply> PendingReply<T> send(KeyedCommand<T> keyedCommand) throws NoConnectionsAvailableException {
 
-		if (shouldHash()) return hostForKey(keyedCommand.getKey()).send(keyedCommand);
+		if (shouldHash()) {
+			Host selectedHost = hostForKey(keyedCommand.getKey());
+			LOG.debug("Matched key {} to host {}", keyedCommand.getKey(), selectedHost);
+			return selectedHost.send(keyedCommand);
+		}
 		
 		// TODO pick a host with a live connection
 		return hosts.get(new Random().nextInt(hosts.size())).send(keyedCommand);

@@ -86,12 +86,13 @@ public class Redis2TextProtocol implements Protocol {
 		
 		@Override
 		public void encode(Exec command, ByteBuf out) {
-			encodeNoArgCommand(command, out, commandNames.get(CommandType.EXEC));
+			encodeNoArgCommand(out, commandNames.get(CommandType.EXEC));
 		}
 
 		@Override
 		public void encode(Exists command, ByteBuf out) {
 			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(2);
 			helper.addArg(commandNames.get(CommandType.EXISTS));
 			helper.addArg(command.getKey().getBytes(ENCODING));
 		}
@@ -99,23 +100,25 @@ public class Redis2TextProtocol implements Protocol {
 		@Override
 		public void encode(Get command, ByteBuf out) {
 			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(2);
 			helper.addArg(commandNames.get(CommandType.GET));
 			helper.addArg(command.getKey().getBytes(ENCODING));
 		}
 
 		@Override
 		public void encode(Multi command, ByteBuf out) {
-			encodeNoArgCommand(command, out, commandNames.get(CommandType.MULTI));
+			encodeNoArgCommand(out, commandNames.get(CommandType.MULTI));
 		}
 		
 		@Override
 		public void encode(Ping command, ByteBuf out) {
-			encodeNoArgCommand(command, out, commandNames.get(CommandType.PING));
+			encodeNoArgCommand(out, commandNames.get(CommandType.PING));
 		}
 
 		@Override
 		public void encode(Set command, ByteBuf out) {
 			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(3);
 			helper.addArg(commandNames.get(CommandType.SET));
 			helper.addArg(command.getKey().getBytes(ENCODING));
 			helper.addArg(command.getValue());
@@ -129,17 +132,19 @@ public class Redis2TextProtocol implements Protocol {
 
 		@Override
 		public void encode(Watch command, ByteBuf out) {
-			encodeNoArgCommand(command, out, commandNames.get(CommandType.PING));
+			encodeNoArgCommand(out, commandNames.get(CommandType.PING));
 		}	
 		
-		private void encodeNoArgCommand(Command command, ByteBuf out, byte[] commandName) {
+		private void encodeNoArgCommand(ByteBuf out, byte[] commandName) {
 			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(1);
 			helper.addArg(commandName);
 		}
 
 		@Override
 		public void encode(Setex command, ByteBuf out) {
 			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(4);
 			helper.addArg(commandNames.get(CommandType.SETEX));
 			helper.addArg(command.getKey().getBytes(ENCODING));
 			helper.addArg(String.valueOf(command.getExpiry()).getBytes(ENCODING));
@@ -148,14 +153,24 @@ public class Redis2TextProtocol implements Protocol {
 		}
 		
 		public void encode(Command command, ByteBuf out) throws OperationNotSupportedException {
-			throw new OperationNotSupportedException();
-		}
+			if (command instanceof Get) encode((Get) command, out);
+			else if (command instanceof Set) encode((Set) command, out);
+			else if (command instanceof Setex) encode((Setex) command, out);
+			else if (command instanceof Exists) encode((Exists) command, out);
+			else if (command instanceof Exec) encode((Exec) command, out);
+			else if (command instanceof Watch) encode((Watch) command, out);
+			else if (command instanceof Ping) encode((Ping) command, out);
+			else if (command instanceof Multi) encode((Multi) command, out);
+			else throw new OperationNotSupportedException();
+
+		}		
 
 		@Override
-		public void encodeTransaction(Transaction transaction, ByteBuf out) throws OperationNotSupportedException {
+		public void encode(Transaction transaction, ByteBuf out) throws OperationNotSupportedException {
 			
 			for (Command command:transaction) {
-				out.writeBytes(out);
+				encode(command, out);
+
 			}
 			
 		}
@@ -177,7 +192,7 @@ public class Redis2TextProtocol implements Protocol {
 		@Override
 		public Reply decode(ByteBuf in) throws UnrecognizedReplyException {
 			
-			if (currentReplyType == null) currentReplyType = infer(in);
+			if (currentReplyType == null || currentReplyType == ReplyType.UNKNOWN) currentReplyType = infer(in);
 			
 			switch(currentReplyType) {
 			
@@ -229,6 +244,7 @@ public class Redis2TextProtocol implements Protocol {
 				byte[] statusCode = in.readBytes( in.forEachByte(HAS_DELIMITER) - in.readerIndex() ).array(); // read up to the new line..
 				StatusReply statusReply = new StatusReply(new String(statusCode));
 				if (LOG.isDebugEnabled()) LOG.debug("Decoded status reply: \"{}\"", statusReply.value());
+				in.readerIndex(in.readerIndex()+DELIMITER.length); // move reader index beyond the CRLF
 				return statusReply;
 			}
 			
@@ -246,6 +262,7 @@ public class Redis2TextProtocol implements Protocol {
 				byte[] errType = in.readBytes( in.forEachByte(ByteBufProcessor.FIND_LINEAR_WHITESPACE)-in.readerIndex() ).array(); // read up to the first white space
 				in.readerIndex(in.readerIndex()+1); // move reader beyond the whitespace
 				byte[] errMessage = in.readBytes( in.forEachByte(HAS_DELIMITER)-in.readerIndex() ).array(); // read up to the next white space
+				in.readerIndex(in.readerIndex()+DELIMITER.length); // move reader index beyond the CRLF
 				return new ErrorReply(new String(errType, ENCODING), new String(errMessage, ENCODING));
 				
 			}
@@ -261,6 +278,7 @@ public class Redis2TextProtocol implements Protocol {
 			if (in.forEachByte(HAS_DELIMITER) != -1) {
 				// there is a delimiter in this, we're good to parse
 				byte[] intValue = in.readBytes( in.forEachByte(HAS_DELIMITER)-in.readerIndex() ).array(); 
+				in.readerIndex(in.readerIndex()+DELIMITER.length); // move reader index beyond the CRLF
 				return new IntegerReply(Integer.valueOf(new String(intValue, ENCODING)));
 				
 			}
@@ -292,6 +310,7 @@ public class Redis2TextProtocol implements Protocol {
 					// no result
 					currentBytesExpected = 0;
 
+					in.readerIndex(in.readerIndex()+DELIMITER.length); // move reader index beyond the CRLF
 					return new BulkReply(null);// done with this reply
 				} else if (in.readableBytes() >= currentBytesExpected+(DELIMITER.length*2)) { // there should be 2x delimiters in here, plus the content
 					LOG.debug("There are sufficient bytes in this buffer to finish decoding");
@@ -300,6 +319,7 @@ public class Redis2TextProtocol implements Protocol {
 					byte[] attribute = in.readBytes(currentBytesExpected).array();
 					currentBytesExpected = 0;
 
+					in.readerIndex(in.readerIndex()+DELIMITER.length); // move reader index beyond the CRLF
 					return new BulkReply(new String(attribute)); // done with this reply
 				}
 				// expected reply length isnt -1 and buffer contains fewer bytes. Wait for another invocation of decode() 
@@ -330,10 +350,11 @@ public class Redis2TextProtocol implements Protocol {
 					paramLength = Integer.valueOf( new String(paramLengthBytes, ENCODING) );
 					if (paramLength == -1) {
 						LOG.debug("Null MultiBulk reply!");
+						in.readerIndex(in.readerIndex()+DELIMITER.length); // move reader index beyond the CRLF
 						return new MultiBulkReply(new ArrayList<Reply>());
 					}
 					LOG.debug("Expecting {} Replies", paramLength);
-					in.readerIndex(in.readerIndex()+2); // move reader index beyond the CRLF
+					in.readerIndex(in.readerIndex()+DELIMITER.length); // move reader index beyond the CRLF
 
 					LOG.debug("Creating new Decoder for reply in MultiBulkReply");
 
@@ -351,7 +372,6 @@ public class Redis2TextProtocol implements Protocol {
 	
 							// see if we need to prepare the next reply
 							if (replies.size() != paramLength) {
-								in.readerIndex(in.readerIndex()+DELIMITER.length); // move reader index beyond the CRLF
 								if (in.readableBytes() > 1) currentMultiBulkReplyDecoder = new Decoder();
 								else return null; // not enough bytes in buffer to infer the next reply.. wait for more.
 	
@@ -407,6 +427,7 @@ public class Redis2TextProtocol implements Protocol {
 			.put(CommandType.MULTI, "MULTI".getBytes(ENCODING))
 			.put(CommandType.PING, "PING".getBytes(ENCODING))
 			.put(CommandType.SET, "SET".getBytes(ENCODING))
+			.put(CommandType.SETEX, "SETEX".getBytes(ENCODING))
 			.put(CommandType.SETNX, "SETNX".getBytes(ENCODING))
 			.put(CommandType.WATCH, "WATCH".getBytes(ENCODING))
 			.build();

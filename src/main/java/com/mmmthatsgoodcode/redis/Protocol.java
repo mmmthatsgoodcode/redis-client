@@ -35,7 +35,7 @@ public interface Protocol {
 		public void encode(Setnx command, ByteBuf out);
 		public void encode(Watch command, ByteBuf out);	
 		public void encode(Command command, ByteBuf out) throws OperationNotSupportedException;		
-		public void encodeTransaction(Transaction command, ByteBuf out) throws OperationNotSupportedException;
+		public void encode(Transaction command, ByteBuf out) throws OperationNotSupportedException;
 		
 	}
 	
