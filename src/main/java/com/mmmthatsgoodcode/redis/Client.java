@@ -26,17 +26,17 @@ import com.mmmthatsgoodcode.redis.Host.Builder;
 import com.mmmthatsgoodcode.redis.client.NoConnectionsAvailableException;
 import com.mmmthatsgoodcode.redis.client.Transaction;
 import com.mmmthatsgoodcode.redis.client.monitor.SelfHealingMonitor;
-import com.mmmthatsgoodcode.redis.disruptor.processor.RequestEvent;
-import com.mmmthatsgoodcode.redis.disruptor.processor.RequestHasher;
-import com.mmmthatsgoodcode.redis.disruptor.processor.RequestRouter;
-import com.mmmthatsgoodcode.redis.disruptor.processor.RequestEvent.RequestEventTranslator;
-import com.mmmthatsgoodcode.redis.protocol.KeyedRequest;
-import com.mmmthatsgoodcode.redis.protocol.PendingResponse;
-import com.mmmthatsgoodcode.redis.protocol.PinnedRequest;
-import com.mmmthatsgoodcode.redis.protocol.Request;
-import com.mmmthatsgoodcode.redis.protocol.Response;
-import com.mmmthatsgoodcode.redis.protocol.request.Exec;
-import com.mmmthatsgoodcode.redis.protocol.response.MultiBulkResponse;
+import com.mmmthatsgoodcode.redis.disruptor.processor.CommandEvent;
+import com.mmmthatsgoodcode.redis.disruptor.processor.CommandHasher;
+import com.mmmthatsgoodcode.redis.disruptor.processor.CommandRouter;
+import com.mmmthatsgoodcode.redis.disruptor.processor.CommandEvent.CommandEventTranslator;
+import com.mmmthatsgoodcode.redis.protocol.KeyedCommand;
+import com.mmmthatsgoodcode.redis.protocol.PendingReply;
+import com.mmmthatsgoodcode.redis.protocol.PinnedCommand;
+import com.mmmthatsgoodcode.redis.protocol.Command;
+import com.mmmthatsgoodcode.redis.protocol.Reply;
+import com.mmmthatsgoodcode.redis.protocol.command.Exec;
+import com.mmmthatsgoodcode.redis.protocol.reply.MultiBulkReply;
 
 public class Client {
 
@@ -178,54 +178,54 @@ public class Client {
 		}
 	}
 	
-	public <T extends Response> PendingResponse<T> send(Request<T> request, Runnable...onComplete) throws NoConnectionsAvailableException {
-		request.getResponse().onComplete(onComplete);
-		return send(request);
+	public <T extends Reply> PendingReply<T> send(Command<T> command, Runnable...onComplete) throws NoConnectionsAvailableException {
+		command.getReply().onComplete(onComplete);
+		return send(command);
 	}
 	
 
 	
-	public PendingResponse<MultiBulkResponse> send(Transaction transaction, Runnable...onComplete) throws NoConnectionsAvailableException {
-		transaction.getResponse().onComplete(onComplete);
+	public PendingReply<MultiBulkReply> send(Transaction transaction, Runnable...onComplete) throws NoConnectionsAvailableException {
+		transaction.getReply().onComplete(onComplete);
 		return send(transaction);
 		
 	}
 	
-	public PendingResponse<MultiBulkResponse> send(Transaction transaction) throws NoConnectionsAvailableException {
+	public PendingReply<MultiBulkReply> send(Transaction transaction) throws NoConnectionsAvailableException {
 		// close transaction with EXEC
 		Exec exec = new Exec();
 		transaction.add(exec);
 		
-		send((PinnedRequest<MultiBulkResponse>) transaction);
+		send((PinnedCommand<MultiBulkReply>) transaction);
 		
-		// return the EXEC's response..
-		return exec.getResponse();
+		// return the EXEC's reply..
+		return exec.getReply();
 	}
 
-	public <T extends Response> PendingResponse<T> send(KeyedRequest<T> keyedRequest) throws NoConnectionsAvailableException {
+	public <T extends Reply> PendingReply<T> send(KeyedCommand<T> keyedCommand) throws NoConnectionsAvailableException {
 
-		if (shouldHash()) return hostForKey(keyedRequest.getKey()).send(keyedRequest);
+		if (shouldHash()) return hostForKey(keyedCommand.getKey()).send(keyedCommand);
 		
 		// TODO pick a host with a live connection
-		return hosts.get(new Random().nextInt(hosts.size())).send(keyedRequest);
+		return hosts.get(new Random().nextInt(hosts.size())).send(keyedCommand);
 		
 	}
 	
-	public <T extends Response> PendingResponse<T> send(PinnedRequest<T> pinnedRequest) throws NoConnectionsAvailableException {
-		if (pinnedRequest.getHost() != null) {
-			LOG.debug("Sending pinned request to {}", pinnedRequest.getHost());
-			return pinnedRequest.getHost().send(pinnedRequest);
+	public <T extends Reply> PendingReply<T> send(PinnedCommand<T> pinnedCommand) throws NoConnectionsAvailableException {
+		if (pinnedCommand.getHost() != null) {
+			LOG.debug("Sending pinned command to {}", pinnedCommand.getHost());
+			return pinnedCommand.getHost().send(pinnedCommand);
 		}
 		
 		// TODO pick a host with a live connection
-		return hosts.get(new Random().nextInt(hosts.size())).send(pinnedRequest);		
+		return hosts.get(new Random().nextInt(hosts.size())).send(pinnedCommand);		
 		
 	}
 	
-	public <T extends Response> PendingResponse<T> send(Request<T> request) throws NoConnectionsAvailableException {
+	public <T extends Reply> PendingReply<T> send(Command<T> command) throws NoConnectionsAvailableException {
 
 		// TODO pick a host with a live connection
-		return hosts.get(new Random().nextInt(hosts.size())).send(request);
+		return hosts.get(new Random().nextInt(hosts.size())).send(command);
 		
 	}
 	

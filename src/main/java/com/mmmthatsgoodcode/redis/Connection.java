@@ -23,18 +23,18 @@ import io.netty.util.AttributeKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.mmmthatsgoodcode.redis.client.ClientWriteHandler;
-import com.mmmthatsgoodcode.redis.client.IdleStateEventHandler;
 import com.mmmthatsgoodcode.redis.client.RedisClientException;
-import com.mmmthatsgoodcode.redis.client.RequestEncoder;
-import com.mmmthatsgoodcode.redis.client.RequestFulfiller;
-import com.mmmthatsgoodcode.redis.client.RequestLogger;
-import com.mmmthatsgoodcode.redis.client.ResponseDecoder;
-import com.mmmthatsgoodcode.redis.client.ResponseLogger;
-import com.mmmthatsgoodcode.redis.protocol.PendingResponse;
-import com.mmmthatsgoodcode.redis.protocol.AbstractRequest;
-import com.mmmthatsgoodcode.redis.protocol.Request;
-import com.mmmthatsgoodcode.redis.protocol.Response;
+import com.mmmthatsgoodcode.redis.client.pipeline.ClientWriteHandler;
+import com.mmmthatsgoodcode.redis.client.pipeline.IdleStateEventHandler;
+import com.mmmthatsgoodcode.redis.client.pipeline.CommandEncoder;
+import com.mmmthatsgoodcode.redis.client.pipeline.CommandFulfiller;
+import com.mmmthatsgoodcode.redis.client.pipeline.CommandLogger;
+import com.mmmthatsgoodcode.redis.client.pipeline.ReplyDecoder;
+import com.mmmthatsgoodcode.redis.client.pipeline.ReplyLogger;
+import com.mmmthatsgoodcode.redis.protocol.PendingReply;
+import com.mmmthatsgoodcode.redis.protocol.AbstractCommand;
+import com.mmmthatsgoodcode.redis.protocol.Command;
+import com.mmmthatsgoodcode.redis.protocol.Reply;
 
 /**
  * Represents a single connection to a RedisHost.
@@ -53,7 +53,7 @@ public class Connection  {
 	private final Host host;
 	private static final Logger LOG = LoggerFactory.getLogger(Connection.class);
 
-	public static final AttributeKey<BlockingQueue<Request>> OUTBOUND = new AttributeKey<BlockingQueue<Request>>("out");
+	public static final AttributeKey<BlockingQueue<Command>> OUTBOUND = new AttributeKey<BlockingQueue<Command>>("out");
 	public static final AttributeKey<Connection> CONNECTION = new AttributeKey<Connection>("connection");
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -68,12 +68,12 @@ public class Connection  {
 			@Override
 			protected void initChannel(SocketChannel ch) throws Exception {
 				
-				// this will hold the sent requests on the Channel
-				ch.attr(OUTBOUND).set(new LinkedBlockingQueue<Request>());
+				// this will hold the sent commands on the Channel
+				ch.attr(OUTBOUND).set(new LinkedBlockingQueue<Command>());
 				ch.attr(CONNECTION).set(Connection.this);
 				
-				if (getHost().getClient().trafficLogging()) ch.pipeline().addLast(new RequestLogger(), new RequestEncoder(), new ClientWriteHandler(), new ResponseLogger(), new ResponseDecoder(), new RequestFulfiller());
-				else ch.pipeline().addLast(new RequestEncoder(), new ClientWriteHandler(), new ResponseDecoder(), new RequestFulfiller());
+				if (getHost().getClient().trafficLogging()) ch.pipeline().addLast(new CommandLogger(), new CommandEncoder(), new ClientWriteHandler(), new ReplyLogger(), new ReplyDecoder(), new CommandFulfiller());
+				else ch.pipeline().addLast(new CommandEncoder(), new ClientWriteHandler(), new ReplyDecoder(), new CommandFulfiller());
 								
 			}
 			
@@ -91,27 +91,27 @@ public class Connection  {
 	}
 
 	/**
-	 * This should be called by the RequestProcessor
-	 * @param request
+	 * This should be called by the CommandProcessor
+	 * @param command
 	 * @return
 	 * @throws InterruptedException 
 	 */
-	public <T extends Response> PendingResponse<T> send(final Request<T> request) {
+	public <T extends Reply> PendingReply<T> send(final Command<T> command) {
 	
 		if (getState() == State.CONNECTED) {
 			
-			channel.writeAndFlush(request).addListener(new ChannelFutureListener() {
+			channel.writeAndFlush(command).addListener(new ChannelFutureListener() {
 				
 				@Override
 				public void operationComplete(ChannelFuture future) throws Exception {
-					request.getResponse().sent(future);
+					command.getReply().sent(future);
 				}
 				
 			});
 			
 		}
 		
-		return request.getResponse();
+		return command.getReply();
 		
 	}
 	
@@ -152,7 +152,7 @@ public class Connection  {
 	
 	/**
 	 * Clean up and shut down the channel, remove this connection from RedisHost,
-	 * return pending Requests
+	 * return pending Commands
 	 * @param cause
 	 */
 	public synchronized void discard(Throwable cause) {
@@ -161,9 +161,9 @@ public class Connection  {
 			
 			setState(State.DISCARDED, cause);
 			
-			// finalize remaining requests
-			for(Request outbound:channel.attr(OUTBOUND).get()) {
-				outbound.getResponse().finalize(cause);
+			// finalize remaining commands
+			for(Command outbound:channel.attr(OUTBOUND).get()) {
+				outbound.getReply().finalize(cause);
 			}
 			
 			// clear attributes
