@@ -18,6 +18,13 @@ This is not feature-complete, it will be in 1.0, Until then, refer to the CHANGE
 
 ### 0.1-SNAPSHOT
 
+[05/09/2013]
+
+- removed callbacks in send()
+- refactored Request to Command, Response to Reply to be in line with protocol spec
+- moved protocol-related stuff out of commands and replies in to a small, testable interface
+- some tests (finally) around the protocol
+
 [21/08/2013]
 
 - some connection state management ( will try to re-establish connections )
