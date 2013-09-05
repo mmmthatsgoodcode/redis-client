@@ -76,7 +76,6 @@ public abstract class AbstractReply<T> implements Reply<T> {
 	protected ReplyValue<T> value = ReplyValue.none();
 	protected Command command = null;
 
-	
 	/* (non-Javadoc)
 	 * @see com.mmmthatsgoodcode.redis.protocol.Reply#value()
 	 */
