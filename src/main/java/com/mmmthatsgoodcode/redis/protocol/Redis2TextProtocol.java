@@ -132,7 +132,13 @@ public class Redis2TextProtocol implements Protocol {
 
 		@Override
 		public void encode(Watch command, ByteBuf out) {
-			encodeNoArgCommand(out, commandNames.get(CommandType.PING));
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(command.getKeys().size()+1);
+			helper.addArg(commandNames.get(CommandType.WATCH));
+			
+			for (String key:command.getKeys()) {
+				helper.addArg(key.getBytes(ENCODING));
+			}
 		}	
 		
 		private void encodeNoArgCommand(ByteBuf out, byte[] commandName) {
