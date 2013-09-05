@@ -29,8 +29,6 @@ import com.lmax.disruptor.YieldingWaitStrategy;
 import com.mmmthatsgoodcode.redis.client.NoConnectionsAvailableException;
 import com.mmmthatsgoodcode.redis.client.Transaction;
 import com.mmmthatsgoodcode.redis.client.monitor.LoggingMonitor;
-import com.mmmthatsgoodcode.redis.protocol.PendingReply;
-import com.mmmthatsgoodcode.redis.protocol.AbstractReply;
 import com.mmmthatsgoodcode.redis.protocol.Reply;
 import com.mmmthatsgoodcode.redis.protocol.command.Exists;
 import com.mmmthatsgoodcode.redis.protocol.command.Get;
@@ -38,6 +36,8 @@ import com.mmmthatsgoodcode.redis.protocol.command.Ping;
 import com.mmmthatsgoodcode.redis.protocol.command.Set;
 import com.mmmthatsgoodcode.redis.protocol.command.Setex;
 import com.mmmthatsgoodcode.redis.protocol.command.Watch;
+import com.mmmthatsgoodcode.redis.protocol.model.AbstractReply;
+import com.mmmthatsgoodcode.redis.protocol.model.PendingReply;
 import com.mmmthatsgoodcode.redis.util.RedisClientMurmurHash;
 
 public abstract class AbstractClientTest {
@@ -72,16 +72,15 @@ public abstract class AbstractClientTest {
 //					System.out.println( "getting "+id);
 					Context timer = null;
 					try {
-						String setreply = CLIENT.send(new Set(id, value)).get().value();
+						String setreply = CLIENT.send(new Set(id, value.getBytes())).get().value();
 
 //						System.out.println( id+" value - "+CLIENT.send(new Get(id)).get(1, TimeUnit.SECONDS).value() );
 						timer = getLatency.time();
-						String reply = (String) CLIENT.send(new Get(id)).get(100, TimeUnit.MILLISECONDS).value();
+						String reply = (String) CLIENT.send(new Get(id)).get().value();
 						timer.stop();
 						assertTrue(reply.equals(value));
 						
-					} catch (IllegalStateException | InterruptedException
-							 | TimeoutException e) {
+					} catch (IllegalStateException e) {
 						System.err.println(id+" Timed out");
 						if (timer != null) timer.stop();
 					} catch (NoConnectionsAvailableException e) {
@@ -115,20 +114,15 @@ public abstract class AbstractClientTest {
 		for (int r=1; r <= 1000; r++) {
 
 			final String id = UUID.randomUUID().toString();
-			replies.add( CLIENT.send(new Setex(id, "i'm really really random", 5000), new Runnable() {
-
-				@Override
-				public void run() {
-					// TODO Auto-generated method stub
+			replies.add( CLIENT.send(new Set(id, ("value-"+id).getBytes())).get() );
+			
 					try {
-						replies.add( CLIENT.send(new Get(id)).get(100, TimeUnit.MILLISECONDS) );
-					} catch (NoConnectionsAvailableException | InterruptedException | TimeoutException e) {
+						replies.add( CLIENT.send(new Exists(id)).get() );
+					} catch (NoConnectionsAvailableException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-				}
-				
-			}).get(1000, TimeUnit.MILLISECONDS) );
+
 //			replies.add( CLIENT.send(new Set(id, "i'm really really random")) );
 
 
@@ -149,7 +143,7 @@ public abstract class AbstractClientTest {
 		for (int r=1; r <= 1000; r++) {
 
 			String id = UUID.randomUUID().toString();
-			String value = "value-for-"+id;
+			byte[] value = ("value-for-"+id).getBytes();
 			Context timer = null;
 			
 			try {
@@ -159,7 +153,7 @@ public abstract class AbstractClientTest {
 				System.out.println(replies);
 
 				assertEquals(replies.size(), 3);
-				assertEquals((String) replies.get(2).value(), value);
+				assertEquals((String) replies.get(2).value(), new String(value));
 			} catch (IllegalStateException | InterruptedException
 					 | TimeoutException | NoConnectionsAvailableException e) {
 				System.err.println(id+" Timed out");
@@ -186,7 +180,7 @@ public abstract class AbstractClientTest {
 					String id = UUID.randomUUID().toString();
 //					System.out.println( "setting "+id);
 //					System.out.println( "set reply - "+CLIENT.send(new Set(id, "value-for-"+id)).get().value() );
-					String value = "value-for-"+id;
+					byte[] value = ("value-for-"+id).getBytes();
 					
 //					System.out.println( "getting "+id);
 					Context timer = null;
@@ -200,7 +194,7 @@ public abstract class AbstractClientTest {
 								).get(5, TimeUnit.SECONDS).value();
 						timer.stop();
 						assertEquals(replies.size(), 2);
-						assertEquals((String) replies.get(1).value(), value);
+						assertEquals((String) replies.get(1).value(), new String(value));
 						
 					} catch (IllegalStateException | InterruptedException
 							 | TimeoutException | NoConnectionsAvailableException e) {

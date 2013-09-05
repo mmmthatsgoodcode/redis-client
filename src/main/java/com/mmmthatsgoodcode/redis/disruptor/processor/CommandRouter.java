@@ -13,7 +13,7 @@ import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.RingBuffer;
 import com.mmmthatsgoodcode.redis.Client;
 import com.mmmthatsgoodcode.redis.Host;
-import com.mmmthatsgoodcode.redis.protocol.PinnedCommand;
+import com.mmmthatsgoodcode.redis.protocol.model.PinnedCommand;
 
 /**
  * Routes commands to a RedisHost

@@ -15,6 +15,7 @@ import java.util.Random;
 
 
 
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,10 +23,10 @@ import com.lmax.disruptor.WaitStrategy;
 import com.mmmthatsgoodcode.redis.Client.HostInfo;
 import com.mmmthatsgoodcode.redis.client.NoConnectionsAvailableException;
 import com.mmmthatsgoodcode.redis.client.Transaction;
-import com.mmmthatsgoodcode.redis.protocol.PendingReply;
 import com.mmmthatsgoodcode.redis.protocol.Command;
 import com.mmmthatsgoodcode.redis.protocol.Reply;
 import com.mmmthatsgoodcode.redis.protocol.command.Exec;
+import com.mmmthatsgoodcode.redis.protocol.model.PendingReply;
 import com.mmmthatsgoodcode.redis.protocol.reply.MultiBulkReply;
 
 public class Host {

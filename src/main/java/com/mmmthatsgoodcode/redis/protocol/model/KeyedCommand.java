@@ -1,4 +1,6 @@
-package com.mmmthatsgoodcode.redis.protocol;
+package com.mmmthatsgoodcode.redis.protocol.model;
+
+import com.mmmthatsgoodcode.redis.protocol.Reply;
 
 public abstract class KeyedCommand<T extends Reply> extends AbstractCommand<T> {
 

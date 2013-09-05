@@ -5,9 +5,11 @@ import java.nio.charset.Charset;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.mmmthatsgoodcode.redis.Client;
 import com.mmmthatsgoodcode.redis.Connection;
-import com.mmmthatsgoodcode.redis.protocol.AbstractCommand;
-import com.mmmthatsgoodcode.redis.protocol.AbstractCommand.EncodeHelper;
+import com.mmmthatsgoodcode.redis.Protocol;
+import com.mmmthatsgoodcode.redis.protocol.command.Ping;
+import com.mmmthatsgoodcode.redis.protocol.model.AbstractCommand;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -19,23 +21,19 @@ import io.netty.handler.codec.MessageToByteEncoder;
 public class CommandEncoder extends MessageToByteEncoder<AbstractCommand> {
 
 	private static final Logger LOG = LoggerFactory.getLogger(CommandEncoder.class);
+	private final Protocol protocol;
+	
+	public CommandEncoder(Protocol protocol) {
+		this.protocol = protocol;
+	}
 	
 	@Override
 	protected void encode(ChannelHandlerContext ctx, AbstractCommand msg, ByteBuf out)
 			throws Exception {
 		
 		LOG.debug("Encoding outbound command {}", msg);
-		
-		EncodeHelper helper = new AbstractCommand.EncodeHelper(out);
-		ByteBuf buf = msg.encode();
-		if (msg.getArgc() > 0) helper.addArgc(msg.getArgc());
+		protocol.getEncoder().encode(msg, out);
 		LOG.debug("Encoded command {}", msg);
-		helper.buffer().writeBytes(buf);
-		buf.release();
-		
-//		ctx.flush();
-		
-		LOG.debug("Sent command {}", msg);
 		
 	}
 	
