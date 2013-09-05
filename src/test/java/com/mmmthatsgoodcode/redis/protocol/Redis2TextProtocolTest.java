@@ -123,8 +123,8 @@ public class Redis2TextProtocolTest {
 		
 		byte[] encoded = new byte[out.readableBytes()]; out.readBytes(encoded);
 		
-		System.out.println(Hex.encodeHex(encoded));
-		System.out.println(Hex.encodeHex(multiCommandBytes.toByteArray()));
+//		System.out.println(Hex.encodeHex(encoded));
+//		System.out.println(Hex.encodeHex(multiCommandBytes.toByteArray()));
 		
 		assertTrue(Arrays.equals(encoded, multiCommandBytes.toByteArray()));
 		
@@ -354,8 +354,8 @@ public class Redis2TextProtocolTest {
 		
 		
 		
-		System.out.println(protocol.getDecoder().decode(allocator.buffer().writeBytes(multiBulkReplyBytes.toByteArray())));
-		System.out.println(Hex.encodeHex(multiBulkReplyBytes.toByteArray()));
+//		System.out.println(protocol.getDecoder().decode(allocator.buffer().writeBytes(multiBulkReplyBytes.toByteArray())));
+//		System.out.println(Hex.encodeHex(multiBulkReplyBytes.toByteArray()));
 		
 		assertEquals(new MultiBulkReply(expectedReplies), protocol.getDecoder().decode(allocator.buffer().writeBytes(multiBulkReplyBytes.toByteArray())));
 		
