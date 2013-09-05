@@ -34,7 +34,6 @@ public class CommandEncoder extends MessageToByteEncoder<AbstractCommand> {
 		LOG.debug("Encoding outbound command {}", msg);
 		protocol.getEncoder().encode(msg, out);
 		LOG.debug("Encoded command {}", msg);
-		ctx.flush();
 		
 	}
 	

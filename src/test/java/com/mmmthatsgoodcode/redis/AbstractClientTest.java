@@ -76,12 +76,11 @@ public abstract class AbstractClientTest {
 
 //						System.out.println( id+" value - "+CLIENT.send(new Get(id)).get(1, TimeUnit.SECONDS).value() );
 						timer = getLatency.time();
-						String reply = (String) CLIENT.send(new Get(id)).get(100, TimeUnit.MILLISECONDS).value();
+						String reply = (String) CLIENT.send(new Get(id)).get().value();
 						timer.stop();
 						assertTrue(reply.equals(value));
 						
-					} catch (IllegalStateException | InterruptedException
-							 | TimeoutException e) {
+					} catch (IllegalStateException e) {
 						System.err.println(id+" Timed out");
 						if (timer != null) timer.stop();
 					} catch (NoConnectionsAvailableException e) {
@@ -112,23 +111,18 @@ public abstract class AbstractClientTest {
 		final Timer getLatency = new Timer();
 		final List<AbstractReply> replies = new ArrayList<AbstractReply>();
 
-		for (int r=1; r <= 4; r++) {
+		for (int r=1; r <= 1000; r++) {
 
 			final String id = UUID.randomUUID().toString();
-			replies.add( CLIENT.send(new Set(id, ("value-"+id).getBytes()), new Runnable() {
-
-				@Override
-				public void run() {
-					// TODO Auto-generated method stub
+			replies.add( CLIENT.send(new Set(id, ("value-"+id).getBytes())).get() );
+			
 					try {
-						replies.add( CLIENT.send(new Get(id)).get(100, TimeUnit.MILLISECONDS) );
-					} catch (NoConnectionsAvailableException | InterruptedException | TimeoutException e) {
+						replies.add( CLIENT.send(new Exists(id)).get() );
+					} catch (NoConnectionsAvailableException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-				}
-				
-			}).get(1000, TimeUnit.MILLISECONDS) );
+
 //			replies.add( CLIENT.send(new Set(id, "i'm really really random")) );
 
 

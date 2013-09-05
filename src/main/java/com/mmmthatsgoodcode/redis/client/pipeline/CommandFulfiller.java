@@ -43,18 +43,19 @@ public class CommandFulfiller extends ChannelInboundHandlerAdapter {
     			while(repliesIterator.hasNext()) {
     				
     				Reply reply = (Reply) repliesIterator.next();
+	    			repliesIterator.remove();
+
     				LOG.debug("Found Reply {}", reply);
     				
     				// the assumption here is, Redis is sending replies in the order of commands sent
     				Command command = ctx.channel().attr(Connection.OUTBOUND).get().poll();
     	    		if (command != null) {
     					LOG.debug("Finalizing command {}", command);
+
     					command.getReply().finalize(reply);
-    	    			repliesIterator.remove();
     					
     	    		} else {
     	    			LOG.error("Orphaned reply {}", reply);
-    	    			repliesIterator.remove();
 
     	    		}
     			}
@@ -62,7 +63,10 @@ public class CommandFulfiller extends ChannelInboundHandlerAdapter {
     			if (ctx.channel().attr(Connection.OUTBOUND).get().size() > 0) LOG.debug("{} commands still pending", ctx.channel().attr(Connection.OUTBOUND).get().size());
 //    			list.clear();
     			
+        		LOG.debug("Processed List {}", list);
+
     		}
+    		
     	
     }
     

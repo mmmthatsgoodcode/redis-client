@@ -188,22 +188,6 @@ public class Client {
 		}
 	}
 	
-	public <T extends Reply> PendingReply<T> send(Command<T> command, Runnable...onComplete) throws NoConnectionsAvailableException {
-		command.getReply().onComplete(onComplete);
-		return send(command);
-	}
-	
-	public <T extends Reply> PendingReply<T> send(KeyedCommand<T> keyedCommand, Runnable...onComplete) throws NoConnectionsAvailableException {
-		keyedCommand.getReply().onComplete(onComplete);
-		return send(keyedCommand);
-	}
-	
-	public PendingReply<MultiBulkReply> send(Transaction transaction, Runnable...onComplete) throws NoConnectionsAvailableException {
-		transaction.getReply().onComplete(onComplete);
-		return send(transaction);
-		
-	}
-	
 	public PendingReply<MultiBulkReply> send(Transaction transaction) throws NoConnectionsAvailableException {
 		// close transaction with EXEC
 		Exec exec = new Exec();

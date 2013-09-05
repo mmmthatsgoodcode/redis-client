@@ -36,6 +36,7 @@ public class ReplyDecoder extends ByteToMessageDecoder {
 	protected void decode(ChannelHandlerContext ctx, ByteBuf in,
 			List<Object> out) throws Exception {
 		
+		LOG.debug("Processing {} readable bytes", in.readableBytes());
 		// if there are readable bytes on the buffer - there should be..
 		while (in.readableBytes() > 1) {
 			LOG.debug("Reading from index {} ( {} readable )", in.readerIndex(), in.readableBytes());
