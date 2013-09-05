@@ -1,7 +1,9 @@
 package com.mmmthatsgoodcode.redis;
 
 import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultithreadEventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -53,6 +55,7 @@ public class Client {
 		protected HashFunction hashFunction = Hashing.murmur3_128();
 		protected AtomicBoolean withTrafficLogging = new AtomicBoolean(false);
 		protected Protocol protocol = new Redis2TextProtocol();
+		protected EventLoopGroup eventLoopGroup = null;
 		
 		public Builder<C> addHost(String hostname, int port) {
 		
@@ -76,6 +79,11 @@ public class Client {
 		public Builder<C> withProtocol(Protocol protocol) {
 			if (protocol == null) throw new IllegalArgumentException("Protocol may not be null");
 			this.protocol = protocol;
+			return this;
+		}
+		
+		public Builder<C> withEventLoopGroup(EventLoopGroup eventLoopGroup) {
+			this.eventLoopGroup = eventLoopGroup;
 			return this;
 		}
 		
@@ -109,7 +117,7 @@ public class Client {
 			if (!channelOptions.containsKey(ChannelOption.SO_KEEPALIVE)) channelOptions.put(ChannelOption.SO_KEEPALIVE, true);
 			if (!channelOptions.containsKey(ChannelOption.CONNECT_TIMEOUT_MILLIS)) channelOptions.put(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000);
 			
-			return (C) new Client(hosts, protocol, hashFunction, connectionsPerHost, channelOptions, shouldHash, connectionRecovery, monitors, withTrafficLogging);
+			return (C) new Client(hosts, eventLoopGroup, protocol, hashFunction, connectionsPerHost, channelOptions, shouldHash, connectionRecovery, monitors, withTrafficLogging);
 		}
 		
 	}
@@ -146,12 +154,15 @@ public class Client {
 	protected final HashFunction hashFunction;
 	protected final Protocol protocol;
 	protected final Logger LOG = LoggerFactory.getLogger(Client.class);
+	protected final EventLoopGroup eventLoopGroup;
 	
-	protected Client(List<HostInfo> hosts, Protocol protocol, HashFunction hashFunction, int connectionsPerHost, Map<ChannelOption, Object> channelOptions, AtomicBoolean shouldHash, boolean connectionRecovery, List<ClientMonitor> monitors, AtomicBoolean trafficLogging) {
+	protected Client(List<HostInfo> hosts, EventLoopGroup eventLoopGroup, Protocol protocol, HashFunction hashFunction, int connectionsPerHost, Map<ChannelOption, Object> channelOptions, AtomicBoolean shouldHash, boolean connectionRecovery, List<ClientMonitor> monitors, AtomicBoolean trafficLogging) {
 
 		this.hosts = new ArrayList<Host>();
 		this.protocol = protocol;
 		this.hashFunction = hashFunction;
+		if (eventLoopGroup != null) this.eventLoopGroup = eventLoopGroup;
+		else this.eventLoopGroup = new NioEventLoopGroup();
 		
 		for (HostInfo hostInfo:hosts) {
 			this.hosts.add(
@@ -253,6 +264,10 @@ public class Client {
 	
 	public Protocol getProtocol() {
 		return protocol;
+	}
+	
+	public EventLoopGroup getEventLoopGroup() {
+		return this.eventLoopGroup;
 	}
 	
 }

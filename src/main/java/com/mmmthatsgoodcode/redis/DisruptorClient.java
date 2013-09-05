@@ -1,6 +1,7 @@
 package com.mmmthatsgoodcode.redis;
 
 import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
 
 import java.util.List;
 import java.util.Map;
@@ -53,7 +54,7 @@ public class DisruptorClient extends Client {
 			if (!channelOptions.containsKey(ChannelOption.SO_KEEPALIVE)) channelOptions.put(ChannelOption.SO_KEEPALIVE, true);
 			if (!channelOptions.containsKey(ChannelOption.CONNECT_TIMEOUT_MILLIS)) channelOptions.put(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000);
 			
-			return new DisruptorClient(hosts, protocol, hashFunction, connectionsPerHost, channelOptions, shouldHash, connectionRecovery, processingWaitStrategy, processingBufferSize, monitors, withTrafficLogging);
+			return new DisruptorClient(hosts, eventLoopGroup, protocol, hashFunction, connectionsPerHost, channelOptions, shouldHash, connectionRecovery, processingWaitStrategy, processingBufferSize, monitors, withTrafficLogging);
 
 			
 		}
@@ -64,12 +65,12 @@ public class DisruptorClient extends Client {
 	protected ExecutorService processors = Executors.newFixedThreadPool(2);
 
 	
-	protected DisruptorClient(List<HostInfo> hosts, Protocol protocol, HashFunction hashFunction,
+	protected DisruptorClient(List<HostInfo> hosts, EventLoopGroup eventLoopGroup, Protocol protocol, HashFunction hashFunction,
 			int connectionsPerHost, Map<ChannelOption, Object> channelOptions,
 			AtomicBoolean shouldHash, boolean connectionRecovery,
 			WaitStrategy processingWaitStrategy, int processingBufferSize,
 			List<ClientMonitor> monitors, AtomicBoolean trafficLogging) {
-		super(hosts, protocol, hashFunction, connectionsPerHost, channelOptions, shouldHash,
+		super(hosts, eventLoopGroup, protocol, hashFunction, connectionsPerHost, channelOptions, shouldHash,
 				connectionRecovery,
 				monitors, trafficLogging);
 		
