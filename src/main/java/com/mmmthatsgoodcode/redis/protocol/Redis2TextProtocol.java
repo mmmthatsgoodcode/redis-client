@@ -320,7 +320,7 @@ public class Redis2TextProtocol implements Protocol {
 					currentBytesExpected = 0;
 
 					in.readerIndex(in.readerIndex()+DELIMITER.length); // move reader index beyond the CRLF
-					return new BulkReply(new String(attribute)); // done with this reply
+					return new BulkReply(attribute); // done with this reply
 				}
 				// expected reply length isnt -1 and buffer contains fewer bytes. Wait for another invocation of decode() 
 				
