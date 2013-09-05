@@ -132,7 +132,13 @@ public class Redis2TextProtocol implements Protocol {
 
 		@Override
 		public void encode(Watch command, ByteBuf out) {
-			encodeNoArgCommand(out, commandNames.get(CommandType.PING));
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(command.getKeys().size()+1);
+			helper.addArg(commandNames.get(CommandType.WATCH));
+			
+			for (String key:command.getKeys()) {
+				helper.addArg(key.getBytes(ENCODING));
+			}
 		}	
 		
 		private void encodeNoArgCommand(ByteBuf out, byte[] commandName) {
@@ -320,7 +326,7 @@ public class Redis2TextProtocol implements Protocol {
 					currentBytesExpected = 0;
 
 					in.readerIndex(in.readerIndex()+DELIMITER.length); // move reader index beyond the CRLF
-					return new BulkReply(new String(attribute)); // done with this reply
+					return new BulkReply(attribute); // done with this reply
 				}
 				// expected reply length isnt -1 and buffer contains fewer bytes. Wait for another invocation of decode() 
 				

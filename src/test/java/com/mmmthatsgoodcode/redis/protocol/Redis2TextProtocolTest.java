@@ -327,7 +327,7 @@ public class Redis2TextProtocolTest {
 		bulkReplyBytes.write("Hooray".getBytes(Redis2TextProtocol.ENCODING));
 		bulkReplyBytes.write(Redis2TextProtocol.DELIMITER);		
 
-		assertEquals(new BulkReply("Hooray"), protocol.getDecoder().decode(allocator.buffer().writeBytes(bulkReplyBytes.toByteArray())));
+		assertEquals(new BulkReply("Hooray".getBytes()), protocol.getDecoder().decode(allocator.buffer().writeBytes(bulkReplyBytes.toByteArray())));
 		
 		
 	}
@@ -350,7 +350,7 @@ public class Redis2TextProtocolTest {
 		
 		List<Reply> expectedReplies = new ArrayList<Reply>();
 		expectedReplies.add(new StatusReply("OK"));
-		expectedReplies.add(new BulkReply("Hooray"));
+		expectedReplies.add(new BulkReply("Hooray".getBytes()));
 		
 		
 		
@@ -395,7 +395,7 @@ public class Redis2TextProtocolTest {
 
 		List<Reply> expectedReplies = new ArrayList<Reply>();
 		expectedReplies.add(new StatusReply("OK"));
-		expectedReplies.add(new BulkReply("Hooray"));
+		expectedReplies.add(new BulkReply("Hooray".getBytes()));
 
 		// decode final pass, assert
 		assertEquals(new MultiBulkReply(expectedReplies), decoder.decode(incoming));

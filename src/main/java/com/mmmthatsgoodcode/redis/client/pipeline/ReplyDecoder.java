@@ -13,6 +13,7 @@ import com.mmmthatsgoodcode.redis.client.UnrecognizedReplyException;
 import com.mmmthatsgoodcode.redis.protocol.Reply;
 import com.mmmthatsgoodcode.redis.protocol.model.AbstractCommand;
 import com.mmmthatsgoodcode.redis.protocol.model.AbstractReply;
+import com.mmmthatsgoodcode.redis.protocol.reply.BulkReply;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufProcessor;
@@ -52,7 +53,8 @@ public class ReplyDecoder extends ByteToMessageDecoder {
 				if (currentReply != null) {
 					// decoder finished
 					replies.add(currentReply);
-					LOG.debug("Decoded reply: {}", currentReply.value());
+					if (LOG.isDebugEnabled() && currentReply.value() != null && currentReply instanceof BulkReply) LOG.debug("Decoded reply: {}", new String((byte[])currentReply.value()));
+					else LOG.debug("Decoded reply: {}", currentReply.value());
 					currentDecoder = protocol.getDecoder();
 	
 					LOG.debug("Buffer after decode: {}/{}", in.readerIndex(), in.readableBytes());

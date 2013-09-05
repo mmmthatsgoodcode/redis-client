@@ -1,5 +1,7 @@
 package com.mmmthatsgoodcode.redis.protocol.reply;
 
+import java.util.Arrays;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,12 +16,20 @@ import com.mmmthatsgoodcode.redis.protocol.model.AbstractReply;
  * @author aszerdahelyi
  *
  */
-public class BulkReply extends AbstractReply<String> {
+public class BulkReply extends AbstractReply<byte[]> {
 
 	private static final Logger LOG = LoggerFactory.getLogger(BulkReply.class);
 
-	public BulkReply(String value) {
+	public BulkReply(byte[] value) {
 		setValue(value);
+	}
+	
+	public boolean equals(Object object) {
+		if (!(object instanceof BulkReply)) return false;
+		
+		BulkReply other = (BulkReply) object;
+		
+		return Arrays.equals( other.value(), value() );
 	}
 
 }
