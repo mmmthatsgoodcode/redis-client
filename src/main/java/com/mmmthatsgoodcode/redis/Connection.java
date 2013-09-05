@@ -50,7 +50,6 @@ public class Connection  {
 	
 	public enum State { CREATED, CONNECTING, CONNECTED, DISCONNECTED, DISCARDED }
 
-	protected final static EventLoopGroup EVENT_LOOP_GROUP = new NioEventLoopGroup();
 	protected volatile Connection.State state = State.CREATED;		
 	private Channel channel = null;
 	private Bootstrap bootstrap = new Bootstrap();
@@ -65,7 +64,7 @@ public class Connection  {
 		
 		this.host = host;
 		
-		bootstrap.group(EVENT_LOOP_GROUP);
+		bootstrap.group(host.getClient().getEventLoopGroup());
 		bootstrap.channel(NioSocketChannel.class);
 		bootstrap.handler(new ChannelInitializer<SocketChannel> () {
 
