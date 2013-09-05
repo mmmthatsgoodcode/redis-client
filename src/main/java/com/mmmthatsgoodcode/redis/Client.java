@@ -30,12 +30,13 @@ import com.mmmthatsgoodcode.redis.disruptor.processor.CommandEvent;
 import com.mmmthatsgoodcode.redis.disruptor.processor.CommandHasher;
 import com.mmmthatsgoodcode.redis.disruptor.processor.CommandRouter;
 import com.mmmthatsgoodcode.redis.disruptor.processor.CommandEvent.CommandEventTranslator;
-import com.mmmthatsgoodcode.redis.protocol.KeyedCommand;
-import com.mmmthatsgoodcode.redis.protocol.PendingReply;
-import com.mmmthatsgoodcode.redis.protocol.PinnedCommand;
 import com.mmmthatsgoodcode.redis.protocol.Command;
+import com.mmmthatsgoodcode.redis.protocol.Redis2TextProtocol;
 import com.mmmthatsgoodcode.redis.protocol.Reply;
 import com.mmmthatsgoodcode.redis.protocol.command.Exec;
+import com.mmmthatsgoodcode.redis.protocol.model.KeyedCommand;
+import com.mmmthatsgoodcode.redis.protocol.model.PendingReply;
+import com.mmmthatsgoodcode.redis.protocol.model.PinnedCommand;
 import com.mmmthatsgoodcode.redis.protocol.reply.MultiBulkReply;
 
 public class Client {
@@ -51,6 +52,7 @@ public class Client {
 		protected Map<ChannelOption, Object> channelOptions = new HashMap<ChannelOption, Object>();
 		protected HashFunction hashFunction = Hashing.murmur3_128();
 		protected AtomicBoolean withTrafficLogging = new AtomicBoolean(false);
+		protected Protocol protocol = new Redis2TextProtocol();
 		
 		public Builder<C> addHost(String hostname, int port) {
 		
@@ -68,6 +70,12 @@ public class Client {
 		public Builder<C> withConnectionsPerHost(int connectionsPerHost) {
 			if (connectionsPerHost < 1) throw new IllegalArgumentException("Need at least 1 conenction per host!");
 			this.connectionsPerHost = connectionsPerHost;
+			return this;
+		}
+		
+		public Builder<C> withProtocol(Protocol protocol) {
+			if (protocol == null) throw new IllegalArgumentException("Protocol may not be null");
+			this.protocol = protocol;
 			return this;
 		}
 		
@@ -101,7 +109,7 @@ public class Client {
 			if (!channelOptions.containsKey(ChannelOption.SO_KEEPALIVE)) channelOptions.put(ChannelOption.SO_KEEPALIVE, true);
 			if (!channelOptions.containsKey(ChannelOption.CONNECT_TIMEOUT_MILLIS)) channelOptions.put(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000);
 			
-			return (C) new Client(hosts, hashFunction, connectionsPerHost, channelOptions, shouldHash, connectionRecovery, monitors, withTrafficLogging);
+			return (C) new Client(hosts, protocol, hashFunction, connectionsPerHost, channelOptions, shouldHash, connectionRecovery, monitors, withTrafficLogging);
 		}
 		
 	}
@@ -136,11 +144,13 @@ public class Client {
 	protected final List<ClientMonitor> monitors;
 	protected final boolean connectionRecovery;
 	protected final HashFunction hashFunction;
+	protected final Protocol protocol;
 	protected final Logger LOG = LoggerFactory.getLogger(Client.class);
 	
-	protected Client(List<HostInfo> hosts, HashFunction hashFunction, int connectionsPerHost, Map<ChannelOption, Object> channelOptions, AtomicBoolean shouldHash, boolean connectionRecovery, List<ClientMonitor> monitors, AtomicBoolean trafficLogging) {
+	protected Client(List<HostInfo> hosts, Protocol protocol, HashFunction hashFunction, int connectionsPerHost, Map<ChannelOption, Object> channelOptions, AtomicBoolean shouldHash, boolean connectionRecovery, List<ClientMonitor> monitors, AtomicBoolean trafficLogging) {
 
 		this.hosts = new ArrayList<Host>();
+		this.protocol = protocol;
 		this.hashFunction = hashFunction;
 		
 		for (HostInfo hostInfo:hosts) {
@@ -178,19 +188,6 @@ public class Client {
 		}
 	}
 	
-	public <T extends Reply> PendingReply<T> send(Command<T> command, Runnable...onComplete) throws NoConnectionsAvailableException {
-		command.getReply().onComplete(onComplete);
-		return send(command);
-	}
-	
-
-	
-	public PendingReply<MultiBulkReply> send(Transaction transaction, Runnable...onComplete) throws NoConnectionsAvailableException {
-		transaction.getReply().onComplete(onComplete);
-		return send(transaction);
-		
-	}
-	
 	public PendingReply<MultiBulkReply> send(Transaction transaction) throws NoConnectionsAvailableException {
 		// close transaction with EXEC
 		Exec exec = new Exec();
@@ -204,7 +201,11 @@ public class Client {
 
 	public <T extends Reply> PendingReply<T> send(KeyedCommand<T> keyedCommand) throws NoConnectionsAvailableException {
 
-		if (shouldHash()) return hostForKey(keyedCommand.getKey()).send(keyedCommand);
+		if (shouldHash()) {
+			Host selectedHost = hostForKey(keyedCommand.getKey());
+			LOG.debug("Matched key {} to host {}", keyedCommand.getKey(), selectedHost);
+			return selectedHost.send(keyedCommand);
+		}
 		
 		// TODO pick a host with a live connection
 		return hosts.get(new Random().nextInt(hosts.size())).send(keyedCommand);
@@ -248,6 +249,10 @@ public class Client {
 	
 	public boolean trafficLogging() {
 		return trafficLogging.get();
+	}
+	
+	public Protocol getProtocol() {
+		return protocol;
 	}
 	
 }

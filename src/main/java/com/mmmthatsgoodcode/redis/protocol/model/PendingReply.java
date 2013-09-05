@@ -1,4 +1,4 @@
-package com.mmmthatsgoodcode.redis.protocol;
+package com.mmmthatsgoodcode.redis.protocol.model;
 
 import io.netty.channel.ChannelFuture;
 
@@ -15,6 +15,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.mmmthatsgoodcode.redis.client.RedisClientException;
+import com.mmmthatsgoodcode.redis.protocol.Command;
+import com.mmmthatsgoodcode.redis.protocol.Reply;
 
 public class PendingReply<T extends Reply> implements Future<T> {
 
@@ -24,8 +26,6 @@ public class PendingReply<T extends Reply> implements Future<T> {
 	protected T reply = null;
 	protected final Command<T> command;
 	private RedisClientException exception = null;
-	private List<Runnable> onCompleteCallbacks = new ArrayList<Runnable>();
-	private List<Runnable> onSentCallbacks = new ArrayList<Runnable>();
 	
 	private ChannelFuture channelFuture = null;
 	
@@ -34,24 +34,9 @@ public class PendingReply<T extends Reply> implements Future<T> {
 		this.lock.acquireUninterruptibly();
 		
 	}
-	
-	public PendingReply<T> onSent(Runnable...onSent) {
-		this.onSentCallbacks.addAll(onSentCallbacks);
-		
-		return this;
-	}
-	
-	public PendingReply<T> onComplete(Runnable...onComplete) {
-		this.onCompleteCallbacks.addAll(Arrays.asList(onComplete));
-		
-		return this;
-	}
-	
 	public final void sent(ChannelFuture channelFuture) {
 		this.channelFuture = channelFuture;
-		for (Runnable onSent:onSentCallbacks) {
-			onSent.run();
-		}
+
 	}
 	
 	/**
@@ -62,9 +47,6 @@ public class PendingReply<T extends Reply> implements Future<T> {
 		LOG.debug("Finalized {}", this);
 		this.reply = reply;
 		this.command.replyReceived(this.reply);
-		for (Runnable onComplete:onCompleteCallbacks) {
-			onComplete.run();
-		}
 		this.lock.release();
 	}
 	

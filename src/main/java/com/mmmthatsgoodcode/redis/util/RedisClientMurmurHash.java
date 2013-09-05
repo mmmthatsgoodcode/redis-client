@@ -153,7 +153,7 @@ public class RedisClientMurmurHash implements HashFunction {
     }	
 
     public long hash(String key) {
-        return hash(key.getBytes(Protocol.ENCODING));
+        return hash(key.getBytes());
     }
 	
 	@Override

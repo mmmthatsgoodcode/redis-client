@@ -17,6 +17,7 @@ public class ReplyLogger extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
     	
+    	LOG.debug("Incoming message {}", msg);
 		if (LOG.isDebugEnabled() && msg instanceof ByteBuf) {
 			ByteBuf out = (ByteBuf) msg;
 			LOG.debug("Inbound UTF8 decoded bytes\n{}", new String(UnpooledByteBufAllocator.DEFAULT.heapBuffer().writeBytes(out, 0, out.readableBytes()).array()));

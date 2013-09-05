@@ -8,11 +8,11 @@ import java.util.List;
 import io.netty.buffer.ByteBuf;
 
 import com.mmmthatsgoodcode.redis.Host;
-import com.mmmthatsgoodcode.redis.protocol.PendingReply;
-import com.mmmthatsgoodcode.redis.protocol.PinnedCommand;
-import com.mmmthatsgoodcode.redis.protocol.AbstractCommand;
 import com.mmmthatsgoodcode.redis.protocol.Command;
 import com.mmmthatsgoodcode.redis.protocol.command.Multi;
+import com.mmmthatsgoodcode.redis.protocol.model.AbstractCommand;
+import com.mmmthatsgoodcode.redis.protocol.model.PendingReply;
+import com.mmmthatsgoodcode.redis.protocol.model.PinnedCommand;
 import com.mmmthatsgoodcode.redis.protocol.reply.MultiBulkReply;
 
 public class Transaction extends AbstractCommand<MultiBulkReply> implements PinnedCommand<MultiBulkReply>, Iterable<AbstractCommand> {
@@ -51,27 +51,6 @@ public class Transaction extends AbstractCommand<MultiBulkReply> implements Pinn
 		}
 		
 		return this;
-	}
-	
-	@Override
-	public ByteBuf encode() {
-		
-		ByteBuf out = byteBufAllocator.buffer();
-		
-		for (Command command:this) {
-			ByteBuf rbuff = command.encode();
-			out.writeBytes(rbuff);
-			rbuff.release();
-		}
-		
-		return out;
-		
-	}
-
-	@Override
-	public byte[] getName() {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 	@Override
