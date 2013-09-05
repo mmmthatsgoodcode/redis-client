@@ -19,7 +19,6 @@ public class ClientTest extends AbstractClientTest {
 		.shouldHash(true)
 		.withHashFunction(Hashing.murmur3_128())
 		.withConnectionsPerHost(1)
-		.withTrafficLogging(true)
 		.build();
 		
 		CLIENT.connect();

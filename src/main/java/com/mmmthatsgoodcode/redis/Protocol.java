@@ -2,24 +2,55 @@ package com.mmmthatsgoodcode.redis;
 
 import java.nio.charset.Charset;
 
+import javax.naming.OperationNotSupportedException;
+
+import com.google.common.collect.ImmutableBiMap;
+import com.google.common.collect.ImmutableMap;
+import com.mmmthatsgoodcode.redis.client.Transaction;
+import com.mmmthatsgoodcode.redis.client.UnrecognizedReplyException;
+import com.mmmthatsgoodcode.redis.protocol.Command;
+import com.mmmthatsgoodcode.redis.protocol.Reply;
+import com.mmmthatsgoodcode.redis.protocol.command.*;
+import com.mmmthatsgoodcode.redis.protocol.reply.*;
+
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufProcessor;
 import io.netty.buffer.PooledByteBufAllocator;
 
-public abstract class Protocol {
+public interface Protocol {
 	
-	// a ByteBufProcessor that finds delimiters
-	public static final ByteBufProcessor HAS_DELIMITER = ByteBufProcessor.FIND_CRLF;
+	public enum ReplyType { BULK, ERROR, INTEGER, MULTI_BULK, STATUS, UNKNOWN }
+	public enum CommandType { GET, SET, SETEX, EXEC, EXISTS, MULTI, PING, SETNX, WATCH }
 	
-	// Character encoding
-	public static final Charset ENCODING = Charset.forName("UTF-8");
+	public ByteBufAllocator getByteBufAllocator();
 	
-	// Command delimiter
-	public static final byte[] DELIMITER = "\r\n".getBytes(ENCODING);
+	public interface Encoder {
+
+		public void encode(Exec command, ByteBuf out);
+		public void encode(Exists command, ByteBuf out);
+		public void encode(Get command, ByteBuf out);
+		public void encode(Multi command, ByteBuf out);
+		public void encode(Ping command, ByteBuf out);
+		public void encode(Set command, ByteBuf out);
+		public void encode(Setex command, ByteBuf out);
+		public void encode(Setnx command, ByteBuf out);
+		public void encode(Watch command, ByteBuf out);	
+		public void encode(Command command, ByteBuf out) throws OperationNotSupportedException;		
+		public void encode(Transaction command, ByteBuf out) throws OperationNotSupportedException;
+		
+	}
 	
-	// Allocator to grab buffers from
-	protected static ByteBufAllocator byteBufAllocator = new PooledByteBufAllocator();
+	public interface Decoder {
+
+		public Reply decode(ByteBuf in) throws UnrecognizedReplyException;
+		public ReplyType replyType();
+		
+	}
 	
-	
+
+	public Protocol.Encoder getEncoder();
+	public Protocol.Decoder getDecoder();
+
 	
 }
