@@ -76,7 +76,7 @@ public abstract class AbstractClientTest {
 
 //						System.out.println( id+" value - "+CLIENT.send(new Get(id)).get(1, TimeUnit.SECONDS).value() );
 						timer = getLatency.time();
-						String reply = (String) CLIENT.send(new Get(id)).get().value();
+						String reply = new String( CLIENT.send(new Get(id)).get().value() );
 						timer.stop();
 						assertTrue(reply.equals(value));
 						

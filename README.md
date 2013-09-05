@@ -23,6 +23,7 @@ This is not feature-complete, it will be in 1.0, Until then, refer to the CHANGE
 - removed callbacks in send()
 - refactored Request to Command, Response to Reply to be in line with protocol spec
 - moved protocol-related stuff out of commands and replies in to a small, testable interface
+- BulkReply no longer UTF8 decodes ( it returns byte[] instead )
 - some tests (finally) around the protocol
 
 [21/08/2013]

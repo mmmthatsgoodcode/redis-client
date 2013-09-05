@@ -15,11 +15,11 @@ import com.mmmthatsgoodcode.redis.protocol.reply.StatusReply;
 
 public class Watch extends AbstractCommand<StatusReply> implements PinnedCommand<StatusReply> {
 
-	private final String[] keys;
+	private final List<String> keys;
 	private Host host = null;
 	
 	public Watch(String...keys) {
-		this.keys = keys;
+		this.keys = Arrays.asList(keys);
 	}
 
 	@Override
@@ -33,4 +33,7 @@ public class Watch extends AbstractCommand<StatusReply> implements PinnedCommand
 		return host;
 	}
 
+	public List<String> getKeys() {
+		return keys;
+	}
 }
