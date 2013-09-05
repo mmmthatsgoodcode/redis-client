@@ -8,25 +8,25 @@ import java.util.List;
 import io.netty.buffer.ByteBuf;
 
 import com.mmmthatsgoodcode.redis.Host;
-import com.mmmthatsgoodcode.redis.protocol.PendingResponse;
-import com.mmmthatsgoodcode.redis.protocol.PinnedRequest;
-import com.mmmthatsgoodcode.redis.protocol.AbstractRequest;
-import com.mmmthatsgoodcode.redis.protocol.Request;
-import com.mmmthatsgoodcode.redis.protocol.request.Multi;
-import com.mmmthatsgoodcode.redis.protocol.response.MultiBulkResponse;
+import com.mmmthatsgoodcode.redis.protocol.PendingReply;
+import com.mmmthatsgoodcode.redis.protocol.PinnedCommand;
+import com.mmmthatsgoodcode.redis.protocol.AbstractCommand;
+import com.mmmthatsgoodcode.redis.protocol.Command;
+import com.mmmthatsgoodcode.redis.protocol.command.Multi;
+import com.mmmthatsgoodcode.redis.protocol.reply.MultiBulkReply;
 
-public class Transaction extends AbstractRequest<MultiBulkResponse> implements PinnedRequest<MultiBulkResponse>, Iterable<AbstractRequest> {
+public class Transaction extends AbstractCommand<MultiBulkReply> implements PinnedCommand<MultiBulkReply>, Iterable<AbstractCommand> {
 
 	private Host host;
-	private List<AbstractRequest> requests = new ArrayList<AbstractRequest>();
+	private List<AbstractCommand> commands = new ArrayList<AbstractCommand>();
 	
 	public Transaction() {
-		requests.add(new Multi());
+		commands.add(new Multi());
 	}
 	
-	public Transaction(AbstractRequest...pre) {
-		requests.addAll(Arrays.asList(pre));
-		requests.add(new Multi());
+	public Transaction(AbstractCommand...pre) {
+		commands.addAll(Arrays.asList(pre));
+		commands.add(new Multi());
 	}
 	
 	public Transaction pin(Host host) {
@@ -35,19 +35,19 @@ public class Transaction extends AbstractRequest<MultiBulkResponse> implements P
 	}
 	
 	/**
-	 * TODO enforce request type limitations
-	 * @param request
+	 * TODO enforce command type limitations
+	 * @param command
 	 * @return
 	 */
-	public Transaction add(AbstractRequest request) {
-		requests.add(request);
+	public Transaction add(AbstractCommand command) {
+		commands.add(command);
 		
 		return this;
 	}
 	
-	public Transaction add(AbstractRequest...requests) {
-		for(AbstractRequest request:requests) {
-			add(request);
+	public Transaction add(AbstractCommand...commands) {
+		for(AbstractCommand command:commands) {
+			add(command);
 		}
 		
 		return this;
@@ -58,8 +58,8 @@ public class Transaction extends AbstractRequest<MultiBulkResponse> implements P
 		
 		ByteBuf out = byteBufAllocator.buffer();
 		
-		for (Request request:this) {
-			ByteBuf rbuff = request.encode();
+		for (Command command:this) {
+			ByteBuf rbuff = command.encode();
 			out.writeBytes(rbuff);
 			rbuff.release();
 		}
@@ -79,18 +79,18 @@ public class Transaction extends AbstractRequest<MultiBulkResponse> implements P
 		return host;
 	}
 
-	public List<AbstractRequest> getRequests() {
-		return requests;
+	public List<AbstractCommand> getCommands() {
+		return commands;
 	}
 
 	@Override
-	public Iterator<AbstractRequest> iterator() {
-		return requests.iterator();
+	public Iterator<AbstractCommand> iterator() {
+		return commands.iterator();
 	}
 	
 	public String toString() {
 		
-		return getClass().getSimpleName()+"#"+hashCode()+"("+requests+")";
+		return getClass().getSimpleName()+"#"+hashCode()+"("+commands+")";
 		
 	}
 

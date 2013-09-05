@@ -1,6 +1,6 @@
 ***Attention***
 
-This is not feature-complete, it will be in 1.0, Until then, refer to the CHANGELOG below to find out if it's useful for you or not.
+This is not feature-complete, it will be in 1.0, Until then, refer to the CHANGELOG below to find out if it's useful for you or not. There are basically no unit tests or documentation.
 
 # MTGC Redis-Client
 
@@ -17,6 +17,13 @@ This is not feature-complete, it will be in 1.0, Until then, refer to the CHANGE
 ## CHANGELOG
 
 ### 0.1-SNAPSHOT
+
+[21/08/2013]
+
+- some connection state management ( will try to re-establish connections )
+- significant bug fixes
+- separated out Disruptor to its own Client impl. Need to see if there is a real benefit vs going directly to the Netty Channel through Client
+
 [19/08/2013]
 
 
@@ -26,27 +33,29 @@ This is not feature-complete, it will be in 1.0, Until then, refer to the CHANGE
 - little Javadoc
 - rudimentary tests
 
-## Code
+## Usage
 ```
-// Create a Client
-Client client = new Client.Builder()
+// Create a Client fronted by a RingBuffer & 2 processors ( hashing, routing )
+Client client = new DisruptorClient.Builder()
+				.withProcessingBufferSize(1024)
+				.withProcessingWaitStrategy(new BlockingWaitStrategy())
 				.addHost("127.0.0.1", 6379)
 				.addHost("127.0.0.1", 6380)
 				.addMonitor(new LoggingMonitor())
 				.withTrafficLogging(true)
 				.shouldHash(true)
 				.withHashFunction(Hashing.murmur3_128())
-				.withProcessingBufferSize(1024)
-				.withProcessingWaitStrategy(new BlockingWaitStrategy())
 				.withConnectionsPerHost(4)
 				.withTrafficLogging(true)
 				.build();
+				
+
 				
 // Connect it up
 client.connect();
 
 // Send a request
-client.send(new Set("Foo", "Bar"), new Runnable() {
+client.send(new Set("Foo", "Bar")).onComplete(new Runnable() {
 
 	public void run() {
 		String v = client.send(new Get("Foo")).get(5, TimeUnit.MILLISECONDS);

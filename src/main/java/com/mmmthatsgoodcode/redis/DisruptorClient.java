@@ -15,14 +15,14 @@ import com.lmax.disruptor.SleepingWaitStrategy;
 import com.lmax.disruptor.WaitStrategy;
 import com.mmmthatsgoodcode.redis.Client.Builder;
 import com.mmmthatsgoodcode.redis.client.Transaction;
-import com.mmmthatsgoodcode.redis.disruptor.processor.RequestEvent;
-import com.mmmthatsgoodcode.redis.disruptor.processor.RequestHasher;
-import com.mmmthatsgoodcode.redis.disruptor.processor.RequestRouter;
-import com.mmmthatsgoodcode.redis.protocol.PendingResponse;
-import com.mmmthatsgoodcode.redis.protocol.Request;
-import com.mmmthatsgoodcode.redis.protocol.Response;
-import com.mmmthatsgoodcode.redis.protocol.request.Exec;
-import com.mmmthatsgoodcode.redis.protocol.response.MultiBulkResponse;
+import com.mmmthatsgoodcode.redis.disruptor.processor.CommandEvent;
+import com.mmmthatsgoodcode.redis.disruptor.processor.CommandHasher;
+import com.mmmthatsgoodcode.redis.disruptor.processor.CommandRouter;
+import com.mmmthatsgoodcode.redis.protocol.PendingReply;
+import com.mmmthatsgoodcode.redis.protocol.Command;
+import com.mmmthatsgoodcode.redis.protocol.Reply;
+import com.mmmthatsgoodcode.redis.protocol.command.Exec;
+import com.mmmthatsgoodcode.redis.protocol.reply.MultiBulkReply;
 
 public class DisruptorClient extends Client {
 
@@ -60,7 +60,7 @@ public class DisruptorClient extends Client {
 		
 	}
 	
-	protected final RingBuffer<RequestEvent> processingBuffer;
+	protected final RingBuffer<CommandEvent> processingBuffer;
 	protected ExecutorService processors = Executors.newFixedThreadPool(2);
 
 	
@@ -74,11 +74,11 @@ public class DisruptorClient extends Client {
 				monitors, trafficLogging);
 		
 		// create processing buffer
-		processingBuffer = RingBuffer.createMultiProducer(RequestEvent.EVENT_FACTORY, processingBufferSize, processingWaitStrategy);
+		processingBuffer = RingBuffer.createMultiProducer(CommandEvent.EVENT_FACTORY, processingBufferSize, processingWaitStrategy);
 
 		// create processors
-		BatchEventProcessor<RequestEvent> hasher = new BatchEventProcessor<RequestEvent>( processingBuffer, processingBuffer.newBarrier(), new RequestHasher(this ) );
-		BatchEventProcessor<RequestEvent> router = new BatchEventProcessor<RequestEvent>( processingBuffer, processingBuffer.newBarrier(hasher.getSequence()), new RequestRouter(this));
+		BatchEventProcessor<CommandEvent> hasher = new BatchEventProcessor<CommandEvent>( processingBuffer, processingBuffer.newBarrier(), new CommandHasher(this ) );
+		BatchEventProcessor<CommandEvent> router = new BatchEventProcessor<CommandEvent>( processingBuffer, processingBuffer.newBarrier(hasher.getSequence()), new CommandRouter(this));
 		
 		// start processors
 		processors.execute(hasher);
@@ -89,21 +89,21 @@ public class DisruptorClient extends Client {
 		
 	}
 
-	public <T extends Response> PendingResponse<T> send(Request<T> request) {
+	public <T extends Reply> PendingReply<T> send(Command<T> command) {
 		
-		processingBuffer.publishEvent(new RequestEvent.RequestEventTranslator(request));
-		return request.getResponse();
+		processingBuffer.publishEvent(new CommandEvent.CommandEventTranslator(command));
+		return command.getReply();
 		
 	}
 	
-	public PendingResponse<MultiBulkResponse> send(Transaction transaction) {
+	public PendingReply<MultiBulkReply> send(Transaction transaction) {
 		
 		// close transaction with EXEC
 		Exec exec = new Exec();
 		transaction.add(exec);
 		
-		processingBuffer.publishEvent(new RequestEvent.RequestEventTranslator(transaction));
-		return exec.getResponse();
+		processingBuffer.publishEvent(new CommandEvent.CommandEventTranslator(transaction));
+		return exec.getReply();
 		
 	}
 	
