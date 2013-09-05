@@ -1,11 +1,13 @@
 package com.mmmthatsgoodcode.redis;
 
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 
 import com.google.common.hash.Hashing;
 import com.lmax.disruptor.BlockingWaitStrategy;
 import com.mmmthatsgoodcode.redis.client.monitor.LoggingMonitor;
 
+@Ignore
 public class DisruptorClientTest extends AbstractClientTest {
 
 	@BeforeClass
