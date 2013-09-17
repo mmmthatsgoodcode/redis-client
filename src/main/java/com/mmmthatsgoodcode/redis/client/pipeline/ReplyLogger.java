@@ -20,7 +20,7 @@ public class ReplyLogger extends ChannelInboundHandlerAdapter {
     	LOG.debug("Incoming message {}", msg);
 		if (LOG.isDebugEnabled() && msg instanceof ByteBuf) {
 			ByteBuf out = (ByteBuf) msg;
-			LOG.debug("Inbound UTF8 decoded bytes\n{}", new String(UnpooledByteBufAllocator.DEFAULT.heapBuffer().writeBytes(out, 0, out.readableBytes()).array()));
+			LOG.debug("Inbound UTF8 decoded bytes\n{}", new String(UnpooledByteBufAllocator.DEFAULT.heapBuffer().writeBytes(out, 0, out.readableBytes()-1).array()));
 			
 		}
 		

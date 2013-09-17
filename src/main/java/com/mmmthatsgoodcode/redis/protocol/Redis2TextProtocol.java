@@ -234,7 +234,7 @@ public class Redis2TextProtocol implements Protocol {
 			if (hint == ReplyHintBytes.BULK) return ReplyType.BULK;
 			if (hint == ReplyHintBytes.MULTI) return ReplyType.MULTI_BULK;
 			
-			if (LOG.isDebugEnabled()) LOG.debug("Redis reply \"{}\" not recognized", new String(new byte[]{hint}));
+			LOG.warn("Redis reply \"{}\" not recognized", new String(new byte[]{hint}));
 			in.readerIndex(in.readerIndex()-1);
 			return ReplyType.UNKNOWN;
 		}
@@ -246,8 +246,8 @@ public class Redis2TextProtocol implements Protocol {
 		 */
 		protected StatusReply decodeStatusReply(ByteBuf in) {
 			// there is at least one delimiter in the buffer - we can do the decoding
-			if (in.forEachByte(HAS_DELIMITER) != -1) {
-				byte[] statusCode = in.readBytes( in.forEachByte(HAS_DELIMITER) - in.readerIndex() ).array(); // read up to the new line..
+			if (in.forEachByte(new HasDelimiter()) != -1) {
+				byte[] statusCode = in.readBytes( in.forEachByte(new HasDelimiter()) - 1 - in.readerIndex() ).array(); // read up to the new line..
 				StatusReply statusReply = new StatusReply(new String(statusCode));
 				if (LOG.isDebugEnabled()) LOG.debug("Decoded status reply: \"{}\"", statusReply.value());
 				in.readerIndex(in.readerIndex()+DELIMITER.length); // move reader index beyond the CRLF
@@ -263,11 +263,11 @@ public class Redis2TextProtocol implements Protocol {
 		 */
 		protected ErrorReply decodeErrorReply(ByteBuf in) {
 			
-			if (in.forEachByte(HAS_DELIMITER) != -1) {
+			if (in.forEachByte(new HasDelimiter()) != -1) {
 				// there is a delimiter in this, we're good to parse
 				byte[] errType = in.readBytes( in.forEachByte(ByteBufProcessor.FIND_LINEAR_WHITESPACE)-in.readerIndex() ).array(); // read up to the first white space
 				in.readerIndex(in.readerIndex()+1); // move reader beyond the whitespace
-				byte[] errMessage = in.readBytes( in.forEachByte(HAS_DELIMITER)-in.readerIndex() ).array(); // read up to the next white space
+				byte[] errMessage = in.readBytes( in.forEachByte(new HasDelimiter())-1-in.readerIndex() ).array(); // read up to the next white space
 				in.readerIndex(in.readerIndex()+DELIMITER.length); // move reader index beyond the CRLF
 				return new ErrorReply(new String(errType, ENCODING), new String(errMessage, ENCODING));
 				
@@ -281,9 +281,9 @@ public class Redis2TextProtocol implements Protocol {
 		 * :{integer-as-string}DELIMITER
 		 */
 		protected IntegerReply decodeIntegerReply(ByteBuf in) {
-			if (in.forEachByte(HAS_DELIMITER) != -1) {
+			if (in.forEachByte(new HasDelimiter()) != -1) {
 				// there is a delimiter in this, we're good to parse
-				byte[] intValue = in.readBytes( in.forEachByte(HAS_DELIMITER)-in.readerIndex() ).array(); 
+				byte[] intValue = in.readBytes( in.forEachByte(new HasDelimiter())-1-in.readerIndex() ).array(); 
 				in.readerIndex(in.readerIndex()+DELIMITER.length); // move reader index beyond the CRLF
 				return new IntegerReply(Integer.valueOf(new String(intValue, ENCODING)));
 				
@@ -298,7 +298,7 @@ public class Redis2TextProtocol implements Protocol {
 		 */
 		protected BulkReply decodeBulkReply(ByteBuf in) {
 			// wait for a delimiter to come
-			if (in.forEachByte(ByteBufProcessor.FIND_CRLF) != -1) {
+			if (in.forEachByte(new HasDelimiter()) != -1) {
 				
 				if (currentBytesExpected == 0) {
 					LOG.debug("Starting from index {} ( {} readable )", in.readerIndex(), in.readableBytes());
@@ -306,7 +306,7 @@ public class Redis2TextProtocol implements Protocol {
 //					LOG.debug("trying to decode {}", new String(UnpooledByteBufAllocator.DEFAULT.heapBuffer().writeBytes(in, in.readerIndex(), in.readableBytes()).array()));
 					
 					// so, there is at least one delimiter here, but do we have attribute length + 2 more bytes to read?
-					byte[] attrLength = in.readBytes( in.forEachByte(HAS_DELIMITER) - in.readerIndex() ).array();
+					byte[] attrLength = in.readBytes( in.forEachByte(new HasDelimiter()) - 1 - in.readerIndex() ).array();
 					currentBytesExpected = Integer.valueOf( new String(attrLength) ); 
 				}
 				
@@ -328,8 +328,8 @@ public class Redis2TextProtocol implements Protocol {
 					in.readerIndex(in.readerIndex()+DELIMITER.length); // move reader index beyond the CRLF
 					return new BulkReply(attribute); // done with this reply
 				}
-				// expected reply length isnt -1 and buffer contains fewer bytes. Wait for another invocation of decode() 
 				
+				// expected reply length isnt -1 and buffer contains fewer bytes. Wait for another invocation of decodeBulkReply() 
 				LOG.debug("Waiting for more data in the buffer");
 				
 			}
@@ -346,13 +346,13 @@ public class Redis2TextProtocol implements Protocol {
 		 * ${attribute length}CR+LF{attribute}CR+LF
 		 * @throws UnrecognizedReplyException 
 		 */
-		protected MultiBulkReply decodeMultiBulkReply(ByteBuf in) {
+		protected MultiBulkReply decodeMultiBulkReply(ByteBuf in) throws UnrecognizedReplyException {
 			// wait for a delimiter to come
-			if (in.forEachByte(HAS_DELIMITER) != -1) {
+			if (in.forEachByte(new HasDelimiter()) != -1) {
 				
 				// read parameter count if we haven't already
 				if (paramLength == 0) {
-					byte[] paramLengthBytes = in.readBytes( in.forEachByte(HAS_DELIMITER) - in.readerIndex() ).array();
+					byte[] paramLengthBytes = in.readBytes( in.forEachByte(new HasDelimiter()) - 1 - in.readerIndex() ).array();
 					paramLength = Integer.valueOf( new String(paramLengthBytes, ENCODING) );
 					if (paramLength == -1) {
 						LOG.debug("Null MultiBulk reply!");
@@ -370,7 +370,7 @@ public class Redis2TextProtocol implements Protocol {
 				while (replies.size() < paramLength && in.readableBytes() > 0) {
 					LOG.debug("Decoding Reply {} of {} in MultiBulkReply", replies.size()+1, paramLength);
 
-					try {
+//					try {
 						
 						Reply currentMultiBulkReply = currentMultiBulkReplyDecoder.decode(in);
 						if (currentMultiBulkReply != null) {
@@ -378,14 +378,14 @@ public class Redis2TextProtocol implements Protocol {
 	
 							// see if we need to prepare the next reply
 							if (replies.size() != paramLength) {
-								if (in.readableBytes() > 1) currentMultiBulkReplyDecoder = new Decoder();
-								else return null; // not enough bytes in buffer to infer the next reply.. wait for more.
+								currentMultiBulkReplyDecoder = new Decoder();
+								return null; // not enough bytes in buffer to infer the next reply.. wait for more.
 	
-							} else {
-								
-								// done!
-								return new MultiBulkReply(replies);
 							}
+								
+							// done!
+							return new MultiBulkReply(replies);
+							
 							
 						} else {
 							// there wasnt enough data in here for the bulk reply to decode. 
@@ -393,11 +393,11 @@ public class Redis2TextProtocol implements Protocol {
 							return null;
 						}
 						
-					} catch (UnrecognizedReplyException e) {
-						// thats fine
-						LOG.debug("Infer threw UnrecognizedReplyException, waiting for more data");
-						return null;
-					}
+//					} catch (UnrecognizedReplyException e) {
+//						// thats fine
+//						LOG.debug("Infer threw UnrecognizedReplyException, waiting for more data");
+//						return null;
+//					}
 									
 				}
 				
@@ -410,7 +410,18 @@ public class Redis2TextProtocol implements Protocol {
 	}
 
 	// a ByteBufProcessor that finds delimiters
-	public static final ByteBufProcessor HAS_DELIMITER = ByteBufProcessor.FIND_CRLF;
+	public static class HasDelimiter implements ByteBufProcessor {
+
+		private byte previous;
+		
+		@Override
+		public boolean process(byte value) throws Exception {
+			if (value == '\n' && previous == '\r') return false;
+			previous = value;
+			return true;
+		}
+		
+	}
 	
 	// Character encoding
 	public static final Charset ENCODING = Charset.forName("UTF-8");

@@ -23,7 +23,6 @@ public class DisruptorClientTest extends AbstractClientTest {
 		.shouldHash(true)
 		.withHashFunction(Hashing.murmur3_128())
 		.withConnectionsPerHost(4)
-		.withTrafficLogging(true)
 		.build();
 		
 		CLIENT.connect();

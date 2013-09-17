@@ -63,8 +63,6 @@ public class CommandFulfiller extends ChannelInboundHandlerAdapter {
     			if (ctx.channel().attr(Connection.OUTBOUND).get().size() > 0) LOG.debug("{} commands still pending", ctx.channel().attr(Connection.OUTBOUND).get().size());
 //    			list.clear();
     			
-        		LOG.debug("Processed List {}", list);
-
     		}
     		
     	
