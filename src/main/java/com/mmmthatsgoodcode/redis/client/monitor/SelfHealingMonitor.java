@@ -101,7 +101,7 @@ public class SelfHealingMonitor implements ClientMonitor {
 
 	@Override
 	public void connectionDiscarded(Connection connection, Throwable cause) {
-		LOG.warn("Discarded connection, incrementing connection create count");
+		LOG.warn("Discarded connection, incrementing connection create count. Cause: {}", cause);
 		healer.needReconnect(connection.getHost());
 		
 	}

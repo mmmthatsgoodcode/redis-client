@@ -27,6 +27,7 @@ import com.lmax.disruptor.BusySpinWaitStrategy;
 import com.lmax.disruptor.SleepingWaitStrategy;
 import com.lmax.disruptor.YieldingWaitStrategy;
 import com.mmmthatsgoodcode.redis.client.NoConnectionsAvailableException;
+import com.mmmthatsgoodcode.redis.client.RedisClientException;
 import com.mmmthatsgoodcode.redis.client.Transaction;
 import com.mmmthatsgoodcode.redis.client.monitor.LoggingMonitor;
 import com.mmmthatsgoodcode.redis.protocol.Reply;
@@ -140,7 +141,7 @@ public abstract class AbstractClientTest {
 		
 		final Timer getLatency = new Timer();
 		
-		for (int r=1; r <= 1000; r++) {
+		for (int r=1; r <= 10000; r++) {
 
 			String id = UUID.randomUUID().toString();
 			byte[] value = ("value-for-"+id).getBytes();
@@ -150,10 +151,10 @@ public abstract class AbstractClientTest {
 				timer = getLatency.time();
 				List<Reply> replies = CLIENT.send(new Transaction(new Watch(id)).add(new Set(id, value), new Exists(id), new Get(id))).get(100, TimeUnit.MILLISECONDS).value();
 				timer.stop();
-				System.out.println(replies);
+//				System.out.println(replies);
 
 				assertEquals(replies.size(), 3);
-				assertEquals((String) replies.get(2).value(), new String(value));
+				assertEquals(new String((byte[]) replies.get(2).value()), new String(value));
 			} catch (IllegalStateException | InterruptedException
 					 | TimeoutException | NoConnectionsAvailableException e) {
 				System.err.println(id+" Timed out");
@@ -169,10 +170,10 @@ public abstract class AbstractClientTest {
 	@Test
 	public void testMultiThreadedTransactions() throws InterruptedException {
 		
-		ExecutorService executor = Executors.newFixedThreadPool(1);
+		ExecutorService executor = Executors.newFixedThreadPool(4);
 		final Timer getLatency = new Timer();
 		
-		for (int r=1; r <= 10; r++) {
+		for (int r=1; r <= 1000; r++) {
 			executor.execute(new Runnable() {
 
 				@Override
@@ -191,15 +192,19 @@ public abstract class AbstractClientTest {
 								new Transaction()
 								.pin(CLIENT.hostForKey(id))
 								.add(new Set(id, value), new Get(id))
-								).get(5, TimeUnit.SECONDS).value();
+								).getOrCatch(10, TimeUnit.MILLISECONDS).value();
 						timer.stop();
 						assertEquals(replies.size(), 2);
-						assertEquals((String) replies.get(1).value(), new String(value));
+						assertEquals(new String((byte[])replies.get(1).value()), new String(value));
 						
 					} catch (IllegalStateException | InterruptedException
 							 | TimeoutException | NoConnectionsAvailableException e) {
 						System.err.println(id+" Timed out");
 						if (timer != null) timer.stop();
+					} catch (RedisClientException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+						System.exit(1);
 					}
 					
 //					replies.add( CLIENT.send(new Get(id)) );
@@ -214,7 +219,7 @@ public abstract class AbstractClientTest {
 		executor.awaitTermination(1, TimeUnit.HOURS);
 		
 		System.out.println("Multi-threaded transactions");
-		System.out.println("Total "+getLatency.getCount()+" Set+Get Transactions, 99th:"+getLatency.getSnapshot().get99thPercentile()/1000000+"ms");
+		System.out.println("Total "+getLatency.getCount()+" Set+Get Transactions, median:"+getLatency.getSnapshot().getMedian()/1000000+"ms 98th:"+getLatency.getSnapshot().get98thPercentile()/1000000+"ms 99th:"+getLatency.getSnapshot().get99thPercentile()/1000000+"ms");
 		
 	}
 	
