@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 import javax.naming.OperationNotSupportedException;
 
@@ -29,6 +30,84 @@ public class Redis2TextProtocolTest {
 	
 	public Redis2TextProtocolTest() {
 		protocol = new Redis2TextProtocol();		
+	}
+	
+	public Reply fragmentAndDecode(ByteBuf in, Decoder decoder) throws UnrecognizedReplyException {
+		
+		ByteBuf out = allocator.buffer();
+		Random rand = new Random();
+		Reply reply = null;
+		while(in.isReadable()) {
+			int chunkLength = 1;
+			if (in.readableBytes() > 1) chunkLength = rand.nextInt(in.readableBytes()-1)+1;
+			
+			ByteBuf debug = allocator.heapBuffer();
+			in.getBytes(in.readerIndex(), debug, chunkLength);
+			
+			System.out.println("Adding "+chunkLength+" bytes to buffer, or \""+new String(debug.array())+"\"");
+			out.writeBytes(in, chunkLength);
+			
+			reply = decoder.decode( out );
+		
+		}
+		
+		in.readerIndex(0);
+		return reply;
+		
+	}
+	
+	
+	@Test
+	public void testEncodeExec() throws IOException {
+		
+		ByteArrayOutputStream execCommandBytes = new ByteArrayOutputStream();
+		
+		execCommandBytes.write("*1".getBytes(Redis2TextProtocol.ENCODING));
+		execCommandBytes.write(Redis2TextProtocol.DELIMITER);		
+
+		execCommandBytes.write("$4".getBytes(Redis2TextProtocol.ENCODING));
+		execCommandBytes.write(Redis2TextProtocol.DELIMITER);		
+				
+		execCommandBytes.write("EXEC".getBytes(Redis2TextProtocol.ENCODING));
+		execCommandBytes.write(Redis2TextProtocol.DELIMITER);		
+		
+		ByteBuf out = allocator.heapBuffer();
+		protocol.getEncoder().encode(new Exec(), out);
+		
+		byte[] encoded = new byte[out.readableBytes()]; out.readBytes(encoded);
+		
+		assertTrue(Arrays.equals(encoded, execCommandBytes.toByteArray()));
+		
+	}
+	
+	@Test
+	public void testEncodeExists() throws IOException {
+		
+		// create a valid EXISTS command
+		ByteArrayOutputStream existsCommandBytes = new ByteArrayOutputStream();
+		
+		existsCommandBytes.write("*2".getBytes(Redis2TextProtocol.ENCODING));
+		existsCommandBytes.write(Redis2TextProtocol.DELIMITER);		
+
+		existsCommandBytes.write("$6".getBytes(Redis2TextProtocol.ENCODING));
+		existsCommandBytes.write(Redis2TextProtocol.DELIMITER);		
+				
+		existsCommandBytes.write("EXISTS".getBytes(Redis2TextProtocol.ENCODING));
+		existsCommandBytes.write(Redis2TextProtocol.DELIMITER);		
+		
+		existsCommandBytes.write("$7".getBytes(Redis2TextProtocol.ENCODING));
+		existsCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		existsCommandBytes.write("SomeKey".getBytes(Redis2TextProtocol.ENCODING));
+		existsCommandBytes.write(Redis2TextProtocol.DELIMITER);		
+		
+		ByteBuf out = allocator.heapBuffer();
+		protocol.getEncoder().encode(new Exists("SomeKey"), out);
+		
+		byte[] encoded = new byte[out.readableBytes()]; out.readBytes(encoded);
+		
+		assertTrue(Arrays.equals(encoded, existsCommandBytes.toByteArray()));		
+		
 	}
 	
 	@Test
@@ -267,6 +346,9 @@ public class Redis2TextProtocolTest {
 		assertTrue(Arrays.equals(encoded, setexCommandBytes.toByteArray()));
 		
 	}	
+
+	/* Replies
+	----------- */
 	
 	@Test
 	public void testOKStatusReply() throws IOException, IllegalStateException, UnrecognizedReplyException {
@@ -336,17 +418,17 @@ public class Redis2TextProtocolTest {
 	public void testMultiBulkReply() throws IOException, UnrecognizedReplyException {
 		
 		// create a valid Multi Bulk reply
-		ByteArrayOutputStream multiBulkReplyBytes = new ByteArrayOutputStream();
-		multiBulkReplyBytes.write("*2".getBytes(Redis2TextProtocol.ENCODING));
-		multiBulkReplyBytes.write(Redis2TextProtocol.DELIMITER);	
+		ByteBuf multiBulkReplyBytes = allocator.buffer();
+		multiBulkReplyBytes.writeBytes("*2".getBytes(Redis2TextProtocol.ENCODING));
+		multiBulkReplyBytes.writeBytes(Redis2TextProtocol.DELIMITER);	
 		
-		multiBulkReplyBytes.write("+OK".getBytes(Redis2TextProtocol.ENCODING));
-		multiBulkReplyBytes.write(Redis2TextProtocol.DELIMITER);	
+		multiBulkReplyBytes.writeBytes("+OK".getBytes(Redis2TextProtocol.ENCODING));
+		multiBulkReplyBytes.writeBytes(Redis2TextProtocol.DELIMITER);	
 		
-		multiBulkReplyBytes.write("$6".getBytes(Redis2TextProtocol.ENCODING));
-		multiBulkReplyBytes.write(Redis2TextProtocol.DELIMITER);		
-		multiBulkReplyBytes.write("Hooray".getBytes(Redis2TextProtocol.ENCODING));
-		multiBulkReplyBytes.write(Redis2TextProtocol.DELIMITER);		
+		multiBulkReplyBytes.writeBytes("$6".getBytes(Redis2TextProtocol.ENCODING));
+		multiBulkReplyBytes.writeBytes(Redis2TextProtocol.DELIMITER);		
+		multiBulkReplyBytes.writeBytes("Hooray".getBytes(Redis2TextProtocol.ENCODING));
+		multiBulkReplyBytes.writeBytes(Redis2TextProtocol.DELIMITER);		
 		
 		List<Reply> expectedReplies = new ArrayList<Reply>();
 		expectedReplies.add(new StatusReply("OK"));
@@ -357,50 +439,9 @@ public class Redis2TextProtocolTest {
 //		System.out.println(protocol.getDecoder().decode(allocator.buffer().writeBytes(multiBulkReplyBytes.toByteArray())));
 //		System.out.println(Hex.encodeHex(multiBulkReplyBytes.toByteArray()));
 		
-		assertEquals(new MultiBulkReply(expectedReplies), protocol.getDecoder().decode(allocator.buffer().writeBytes(multiBulkReplyBytes.toByteArray())));
+		assertEquals(new MultiBulkReply(expectedReplies), fragmentAndDecode( multiBulkReplyBytes, protocol.getDecoder() ));
 		
 	}
-	
-	@Test
-	public void testMultiPartMultiBulkReply() throws IOException, UnrecognizedReplyException {
 
-		Decoder decoder = protocol.getDecoder();
-		ByteBuf incoming = allocator.buffer();
-		
-		// create a valid Multi Bulk reply .. in 3 parts, to simulate TCP packets
-
-		incoming.writeBytes("*2".getBytes(Redis2TextProtocol.ENCODING));
-		incoming.writeBytes(Redis2TextProtocol.DELIMITER);	
-		
-		// decode 1st pass
-		decoder.decode(incoming);
-		
-		incoming.writeBytes("+O".getBytes(Redis2TextProtocol.ENCODING));
-
-		// decode 2nd pass
-		decoder.decode(incoming);
-
-		incoming.writeBytes("K".getBytes(Redis2TextProtocol.ENCODING));
-		incoming.writeBytes(Redis2TextProtocol.DELIMITER);	
-		
-		incoming.writeBytes("$6".getBytes(Redis2TextProtocol.ENCODING));
-		incoming.writeBytes(Redis2TextProtocol.DELIMITER);	
-		
-		// decode 3rd pass
-		decoder.decode(incoming);
-
-		incoming.writeBytes("Hooray".getBytes(Redis2TextProtocol.ENCODING));
-		incoming.writeBytes(Redis2TextProtocol.DELIMITER);		
-		
-
-		List<Reply> expectedReplies = new ArrayList<Reply>();
-		expectedReplies.add(new StatusReply("OK"));
-		expectedReplies.add(new BulkReply("Hooray".getBytes()));
-
-		// decode final pass, assert
-		assertEquals(new MultiBulkReply(expectedReplies), decoder.decode(incoming));
-
-		
-	}
 	
 }

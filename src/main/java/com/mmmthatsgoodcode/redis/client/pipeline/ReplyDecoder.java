@@ -39,7 +39,7 @@ public class ReplyDecoder extends ByteToMessageDecoder {
 		
 		LOG.debug("Processing {} readable bytes", in.readableBytes());
 		// if there are readable bytes on the buffer - there should be..
-		while (in.readableBytes() > 1) {
+		while (in.readableBytes() > 0) {
 			LOG.debug("Reading from index {} ( {} readable )", in.readerIndex(), in.readableBytes());
 			// first, find out what kind of reply this is ( if the first byte is already available on the buffer - it should be )
 			if (currentDecoder == null) {
@@ -61,9 +61,8 @@ public class ReplyDecoder extends ByteToMessageDecoder {
 					// see if we are done completely decoding the buffer
 					if (in.readableBytes() == 0) {
 						LOG.debug("End of buffer");
-						in.clear();
 						
-						ctx.fireChannelRead(replies);
+						out.add(replies);
 						return;
 	
 					}
@@ -73,6 +72,7 @@ public class ReplyDecoder extends ByteToMessageDecoder {
 					
 				} else {
 	
+					LOG.debug("Insufficient bytes in buffer to decode a reply ( {} readable bytes )", in.readableBytes());
 					// bytes in buffer were not enough to decode a reply, continue..
 					return;
 				
