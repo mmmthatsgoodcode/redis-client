@@ -18,6 +18,11 @@ This is not feature-complete, it will be in 1.0, Until then, refer to the CHANGE
 
 ### 0.1-SNAPSHOT
 
+
+[18/09/2013]
+
+- bug fixes in Redis2TextProtocol.Decoder.decodeMultiBulkReply
+
 [05/09/2013]
 
 - removed callbacks in send()
@@ -54,7 +59,6 @@ Client client = new DisruptorClient.Builder()
 				.shouldHash(true)
 				.withHashFunction(Hashing.murmur3_128())
 				.withConnectionsPerHost(4)
-				.withTrafficLogging(true)
 				.build();
 				
 
@@ -63,22 +67,17 @@ Client client = new DisruptorClient.Builder()
 client.connect();
 
 // Send a request
-client.send(new Set("Foo", "Bar")).onComplete(new Runnable() {
+client.send(new Set("Foo", "Bar")).getOrCatch(10, TimeUnit.MILLISECONDS); // wait for 10ms, re-throw any exceptions
 
-	public void run() {
-		String v = client.send(new Get("Foo")).get(5, TimeUnit.MILLISECONDS);
+	String v = client.send(new Get("Foo")).get(5, TimeUnit.MILLISECONDS);
 		
-		client.send(new Watch("Foo")); // single-keyed commands are automatically hashed
-		
-		List<Response> r = client.send(new Transaction()
-					.pin(client.hostForKey("Foo"))
-					.add(new Setex("Foo", v+" ?!", 3600)))).get(10, TimeUnit.MILLISECONDS)
+	client.send(new Watch("Foo")).get(5, TimeUnit.MILLISECONDS); // single-keyed commands are automatically hashed
+	
+	List<Response> r = client.send(new Transaction()
+				.pin(client.hostForKey("Foo"))
+				.add(new Setex("Foo", v+" ?!", 3600)))).get(10, TimeUnit.MILLISECONDS)
 					
-		if (r.size() == 0) System.err.println("Transaction aborted!")
-					
-	}
-
-}).get(10, TimeUnit.MILLISECONDS);
+	if (r.size() == 0) System.err.println("Transaction aborted!")
 
 
 
