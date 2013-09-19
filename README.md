@@ -16,6 +16,14 @@ This is not feature-complete, it will be in 1.0, Until then, refer to the CHANGE
 
 ## CHANGELOG
 
+### 0.1
+
+[19/09/2013]
+
+- Stable enough with the supported commands
+- which are Exec, Exists, Get, Multi, Ping, Set, Setex, Setnx, Watch
+
+
 ### 0.1-SNAPSHOT
 
 
