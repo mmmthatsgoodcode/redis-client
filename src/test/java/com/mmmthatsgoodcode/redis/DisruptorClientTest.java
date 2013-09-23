@@ -13,7 +13,7 @@ public class DisruptorClientTest extends AbstractClientTest {
 	@BeforeClass
 	public static void createClient() {
 		
-		CLIENT = new DisruptorClient.Builder()
+		CLIENT = new RedisDisruptorClient.Builder()
 		.withProcessingBufferSize(1024)
 		.withProcessingWaitStrategy(new BlockingWaitStrategy())
 		.addHost("127.0.0.1", 6379)

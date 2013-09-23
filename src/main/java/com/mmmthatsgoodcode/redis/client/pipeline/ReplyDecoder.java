@@ -42,47 +42,38 @@ public class ReplyDecoder extends ByteToMessageDecoder {
 		while (in.readableBytes() > 0) {
 			LOG.debug("Reading from index {} ( {} readable )", in.readerIndex(), in.readableBytes());
 			// first, find out what kind of reply this is ( if the first byte is already available on the buffer - it should be )
-			if (currentDecoder == null) {
-				currentDecoder = protocol.getDecoder();
-//				LOG.debug("Inferred next reply in buffer to be: {}", currentDecoder);
-			}
+			if (currentDecoder == null) currentDecoder = protocol.getDecoder();
 
 			// decode contents from the buffer
-//			try {
-				Reply currentReply = currentDecoder.decode(in);
-				if (currentReply != null) {
-					// decoder finished
-					replies.add(currentReply);
-					if (LOG.isDebugEnabled() && currentReply.value() != null && currentReply instanceof BulkReply) LOG.debug("Decoded reply: {}", new String((byte[])currentReply.value()));
-					else LOG.debug("Decoded reply: {}", currentReply.value());
-					currentDecoder = protocol.getDecoder();
-	
-					LOG.debug("Buffer after decode: {}/{}", in.readerIndex(), in.readableBytes());
-					// see if we are done completely decoding the buffer
-					if (in.readableBytes() == 0) {
-						LOG.debug("End of buffer");
-						
-						out.add(replies);
-						return;
-	
-					}
+			Reply currentReply = currentDecoder.decode(in);
+			if (currentReply != null) {
+				// decoder finished
+				replies.add(currentReply);
+				if (LOG.isDebugEnabled() && currentReply.value() != null && currentReply instanceof BulkReply) LOG.debug("Decoded reply: {}", new String((byte[])currentReply.value()));
+				else LOG.debug("Decoded reply: {}", currentReply.value());
+				currentDecoder = protocol.getDecoder();
+
+				LOG.debug("Buffer after decode: {}/{}", in.readerIndex(), in.readableBytes());
+				// see if we are done completely decoding the buffer
+				if (in.readableBytes() == 0) {
+					LOG.debug("End of buffer");
 					
-					// there are still bytes in the buffer after decode, that are not CRLF
-					LOG.debug("Still {} bytes buffered to go..", in.readableBytes());
-					
-				} else {
-	
-					LOG.debug("Insufficient bytes in buffer to decode a reply ( {} readable bytes )", in.readableBytes());
-					// bytes in buffer were not enough to decode a reply, continue..
+					out.add(replies);
 					return;
-				
+
 				}
+				
+				// there are still bytes in the buffer after decode, that are not CRLF
+				LOG.debug("Still {} bytes buffered to go..", in.readableBytes());
+				
+			} else {
+
+				LOG.debug("Insufficient bytes in buffer to decode a reply ( {} readable bytes )", in.readableBytes());
+				// bytes in buffer were not enough to decode a reply, continue..
+				return;
 			
-//			} catch (UnrecognizedReplyException e) {
-//				
-//				return;
-//				
-//			}
+			}
+
 
 		
 		}

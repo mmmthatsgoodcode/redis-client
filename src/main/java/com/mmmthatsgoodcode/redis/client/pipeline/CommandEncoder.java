@@ -5,9 +5,10 @@ import java.nio.charset.Charset;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.mmmthatsgoodcode.redis.Client;
+import com.mmmthatsgoodcode.redis.RedisClient;
 import com.mmmthatsgoodcode.redis.Connection;
 import com.mmmthatsgoodcode.redis.Protocol;
+import com.mmmthatsgoodcode.redis.protocol.Command;
 import com.mmmthatsgoodcode.redis.protocol.command.Ping;
 import com.mmmthatsgoodcode.redis.protocol.model.AbstractCommand;
 
@@ -18,7 +19,7 @@ import io.netty.buffer.UnpooledHeapByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
 
-public class CommandEncoder extends MessageToByteEncoder<AbstractCommand> {
+public class CommandEncoder extends MessageToByteEncoder<Command> {
 
 	private static final Logger LOG = LoggerFactory.getLogger(CommandEncoder.class);
 	private final Protocol protocol;
@@ -28,7 +29,7 @@ public class CommandEncoder extends MessageToByteEncoder<AbstractCommand> {
 	}
 	
 	@Override
-	protected void encode(ChannelHandlerContext ctx, AbstractCommand msg, ByteBuf out)
+	protected void encode(ChannelHandlerContext ctx, Command msg, ByteBuf out)
 			throws Exception {
 		
 		LOG.debug("Encoding outbound command {}", msg);

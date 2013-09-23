@@ -43,7 +43,7 @@ import com.mmmthatsgoodcode.redis.util.RedisClientMurmurHash;
 
 public abstract class AbstractClientTest {
 	
-	protected static Client CLIENT;
+	protected static RedisClient CLIENT;
 	
 	
 	@Test
