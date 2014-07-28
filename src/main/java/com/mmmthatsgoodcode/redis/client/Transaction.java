@@ -15,16 +15,16 @@ import com.mmmthatsgoodcode.redis.protocol.model.PendingReply;
 import com.mmmthatsgoodcode.redis.protocol.model.PinnedCommand;
 import com.mmmthatsgoodcode.redis.protocol.reply.MultiBulkReply;
 
-public class Transaction extends AbstractCommand<MultiBulkReply> implements PinnedCommand<MultiBulkReply>, Iterable<AbstractCommand> {
+public class Transaction extends AbstractCommand<MultiBulkReply> implements PinnedCommand<MultiBulkReply>, Iterable<Command> {
 
 	private Host host;
-	private List<AbstractCommand> commands = new ArrayList<AbstractCommand>();
+	private List<Command> commands = new ArrayList<Command>();
 	
 	public Transaction() {
 		commands.add(new Multi());
 	}
 	
-	public Transaction(AbstractCommand...pre) {
+	public Transaction(Command...pre) {
 		commands.addAll(Arrays.asList(pre));
 		commands.add(new Multi());
 	}
@@ -39,14 +39,14 @@ public class Transaction extends AbstractCommand<MultiBulkReply> implements Pinn
 	 * @param command
 	 * @return
 	 */
-	public Transaction add(AbstractCommand command) {
+	public Transaction add(Command command) {
 		commands.add(command);
 		
 		return this;
 	}
 	
-	public Transaction add(AbstractCommand...commands) {
-		for(AbstractCommand command:commands) {
+	public Transaction add(Command...commands) {
+		for(Command command:commands) {
 			add(command);
 		}
 		
@@ -58,12 +58,12 @@ public class Transaction extends AbstractCommand<MultiBulkReply> implements Pinn
 		return host;
 	}
 
-	public List<AbstractCommand> getCommands() {
+	public List<Command> getCommands() {
 		return commands;
 	}
 
 	@Override
-	public Iterator<AbstractCommand> iterator() {
+	public Iterator<Command> iterator() {
 		return commands.iterator();
 	}
 	

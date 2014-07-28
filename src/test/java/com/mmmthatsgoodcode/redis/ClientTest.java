@@ -7,13 +7,12 @@ import com.google.common.hash.Hashing;
 import com.lmax.disruptor.BlockingWaitStrategy;
 import com.mmmthatsgoodcode.redis.client.monitor.LoggingMonitor;
 
-@Ignore
 public class ClientTest extends AbstractClientTest {
 
 	@BeforeClass
 	public static void createClient() {
 		
-		CLIENT = new Client.Builder()
+		CLIENT = new RedisClient.Builder()
 		.addHost("127.0.0.1", 6379)
 		.addHost("127.0.0.1", 6380)
 		.addMonitor(new LoggingMonitor())

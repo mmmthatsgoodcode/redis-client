@@ -20,7 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.lmax.disruptor.WaitStrategy;
-import com.mmmthatsgoodcode.redis.Client.HostInfo;
+import com.mmmthatsgoodcode.redis.RedisClient.HostInfo;
 import com.mmmthatsgoodcode.redis.client.NoConnectionsAvailableException;
 import com.mmmthatsgoodcode.redis.client.Transaction;
 import com.mmmthatsgoodcode.redis.protocol.Command;
