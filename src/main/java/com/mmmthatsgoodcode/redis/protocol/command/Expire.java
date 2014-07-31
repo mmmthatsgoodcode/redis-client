@@ -5,7 +5,7 @@ import com.mmmthatsgoodcode.redis.protocol.reply.IntegerReply;
 
 public class Expire extends KeyedCommand<IntegerReply>{
 	
-	private byte[] value;
+	private final byte[] value;
 
 	public Expire(String key, byte[] value) {
 		super(key);

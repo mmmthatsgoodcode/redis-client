@@ -5,7 +5,7 @@ import com.mmmthatsgoodcode.redis.protocol.reply.IntegerReply;
 
 public class Getbit extends KeyedCommand<IntegerReply>{
 	
-	private byte[] value;
+	private final byte[] value;
 
 	public Getbit(String key, byte[] value) {
 		super(key);
