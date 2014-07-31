@@ -3,13 +3,8 @@ package com.mmmthatsgoodcode.redis.protocol.command;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.commons.lang3.StringUtils;
-
-import io.netty.buffer.ByteBuf;
-
 import com.mmmthatsgoodcode.redis.Host;
 import com.mmmthatsgoodcode.redis.protocol.model.AbstractCommand;
-import com.mmmthatsgoodcode.redis.protocol.model.KeyedCommand;
 import com.mmmthatsgoodcode.redis.protocol.model.PinnedCommand;
 import com.mmmthatsgoodcode.redis.protocol.reply.StatusReply;
 
