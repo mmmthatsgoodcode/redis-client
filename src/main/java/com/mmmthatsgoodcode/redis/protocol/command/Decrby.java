@@ -5,7 +5,7 @@ import com.mmmthatsgoodcode.redis.protocol.reply.IntegerReply;
 
 public class Decrby extends KeyedCommand<IntegerReply>{
 	
-	private byte[] decrement;
+	private final byte[] decrement;
 
 	public Decrby(String key, byte[] decrement) {
 		super(key);

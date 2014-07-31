@@ -5,8 +5,8 @@ import com.mmmthatsgoodcode.redis.protocol.reply.BulkReply;
 
 public class Getrange extends KeyedCommand<BulkReply>{
 	
-	private byte[] start;
-	private byte[] end;
+	private final byte[] start;
+	private final byte[] end;
 
 	public Getrange(String key, byte[] start, byte[] end) {
 		super(key);

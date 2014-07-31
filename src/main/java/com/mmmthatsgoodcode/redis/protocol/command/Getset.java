@@ -5,7 +5,7 @@ import com.mmmthatsgoodcode.redis.protocol.reply.BulkReply;
 
 public class Getset extends KeyedCommand<BulkReply>{
 	
-	private byte[] value;
+	private final byte[] value;
 
 	public Getset(String key, byte[] value) {
 		super(key);
