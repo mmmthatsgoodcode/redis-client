@@ -350,7 +350,7 @@ public class Redis2TextProtocol implements Protocol {
 			helper.addArgc(4);
 			helper.addArg(commandNames.get(CommandType.SETEX));
 			helper.addArg(command.getKey().getBytes(ENCODING));
-			helper.addArg(command.getExpiry());
+			helper.addArg(String.valueOf(command.getExpiry()).getBytes(ENCODING));
 			helper.addArg(command.getValue());
 		}
 

@@ -336,7 +336,7 @@ public class Redis2TextProtocolTest {
 		setexCommandBytes.write(Redis2TextProtocol.DELIMITER);	
 		
 		ByteBuf out = allocator.heapBuffer();
-		protocol.getEncoder().encode(new Setex("SomeKey", "SomeValue".getBytes(), "99".getBytes(Redis2TextProtocol.ENCODING)), out);
+		protocol.getEncoder().encode(new Setex("SomeKey", "SomeValue".getBytes(), 99), out);
 		
 		byte[] encoded = new byte[out.readableBytes()]; out.readBytes(encoded);
 		

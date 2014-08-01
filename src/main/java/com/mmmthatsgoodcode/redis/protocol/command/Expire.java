@@ -5,15 +5,15 @@ import com.mmmthatsgoodcode.redis.protocol.reply.IntegerReply;
 
 public class Expire extends KeyedCommand<IntegerReply>{
 	
-	private final byte[] value;
+	private final byte[] seconds;
 
-	public Expire(String key, byte[] value) {
+	public Expire(String key, byte[] seconds) {
 		super(key);
-		this.value = value;
+		this.seconds = seconds;
 	}
 	
-	public byte[] getValue(){
-		return this.value;
+	public byte[] getSeconds(){
+		return this.seconds;
 	}
 
 }
