@@ -6,11 +6,11 @@ import java.util.List;
 import com.mmmthatsgoodcode.redis.protocol.model.AbstractCommand;
 import com.mmmthatsgoodcode.redis.protocol.reply.IntegerReply;
 
-public class Del extends AbstractCommand<IntegerReply>{
-
-	private final List<String> keys;
+public class Sdiffstore extends AbstractCommand<IntegerReply>{
 	
-	public Del(String... keys) {
+	private final List<String> keys;
+
+	public Sdiffstore(String... keys){
 		this.keys = Arrays.asList(keys);
 	}
 	

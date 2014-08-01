@@ -21,7 +21,6 @@ import com.mmmthatsgoodcode.redis.client.Transaction;
 import com.mmmthatsgoodcode.redis.client.UnrecognizedReplyException;
 import com.mmmthatsgoodcode.redis.protocol.Command;
 import com.mmmthatsgoodcode.redis.protocol.command.*;
-import com.mmmthatsgoodcode.redis.protocol.model.AbstractReply;
 import com.mmmthatsgoodcode.redis.protocol.model.AbstractReply.ReplyHintBytes;
 import com.mmmthatsgoodcode.redis.protocol.reply.BulkReply;
 import com.mmmthatsgoodcode.redis.protocol.reply.ErrorReply;
@@ -92,8 +91,27 @@ public class Redis2TextProtocol implements Protocol {
 		}
 		
 		@Override
+		public void encode(Del command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(1+command.getKeys().size());
+			helper.addArg(commandNames.get(CommandType.DEL));
+			
+			for(String key : command.getKeys()){
+				helper.addArg(key.getBytes(ENCODING));
+			}
+		}
+		
+		@Override
 		public void encode(Discard command, ByteBuf out) {
 			encodeNoArgCommand(out, commandNames.get(CommandType.DISCARD));
+		}
+		
+		@Override
+		public void encode(Dump command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(2);
+			helper.addArg(commandNames.get(CommandType.DUMP));
+			helper.addArg(command.getKey().getBytes(ENCODING));
 		}
 		
 		@Override
@@ -123,7 +141,16 @@ public class Redis2TextProtocol implements Protocol {
 			helper.addArgc(3);
 			helper.addArg(commandNames.get(CommandType.EXPIRE));
 			helper.addArg(command.getKey().getBytes(ENCODING));
-			helper.addArg(command.getValue());
+			helper.addArg(command.getSeconds());
+		}
+		
+		@Override
+		public void encode(Expireat command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(3);
+			helper.addArg(commandNames.get(CommandType.EXPIREAT));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getTimeStamp());
 		}
 
 		@Override
@@ -189,6 +216,116 @@ public class Redis2TextProtocol implements Protocol {
 		}
 
 		@Override
+		public void encode(Rename command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(3);
+			helper.addArg(commandNames.get(CommandType.RENAME));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getNewKey().getBytes(ENCODING));
+		}
+
+		@Override
+		public void encode(Renamex command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(3);
+			helper.addArg(commandNames.get(CommandType.RENAMEX));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getNewKey().getBytes(ENCODING));
+		}
+
+		@Override
+		public void encode(Role command, ByteBuf out) {
+			encodeNoArgCommand(out, commandNames.get(CommandType.ROLE));
+		}
+
+		@Override
+		public void encode(Rpop command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(2);
+			helper.addArg(commandNames.get(CommandType.RPOP));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+		}
+
+		@Override
+		public void encode(Rpoplpush command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(3);
+			helper.addArg(commandNames.get(CommandType.RPOPLPUSH));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getDestination());
+		}
+
+		@Override
+		public void encode(Rpush command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(2+command.getValues().size());
+			helper.addArg(commandNames.get(CommandType.RPUSH));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			
+			for(String value :command.getValues()){
+				helper.addArg(value.getBytes(ENCODING));
+			}
+		}
+
+		@Override
+		public void encode(Rpushx command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(3);
+			helper.addArg(commandNames.get(CommandType.RPUSHX));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getValue().getBytes(ENCODING));
+		}
+
+		@Override
+		public void encode(Sadd command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(1+command.getKeys().size());
+			helper.addArg(commandNames.get(CommandType.SADD));
+			
+			for(String key : command.getKeys()){
+				helper.addArg(key.getBytes(ENCODING));
+			}
+		}
+
+		@Override
+		public void encode(Scard command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(2);
+			helper.addArg(commandNames.get(CommandType.SCARD));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+		}
+
+		@Override
+		public void encode(Sdiff command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(1+command.getKeys().size());
+			helper.addArg(commandNames.get(CommandType.SDIFF));
+			
+			for(String key : command.getKeys()){
+				helper.addArg(key.getBytes(ENCODING));
+			}
+		}
+
+		@Override
+		public void encode(Sdiffstore command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(1+command.getKeys().size());
+			helper.addArg(commandNames.get(CommandType.SDIFFSTORE));
+			
+			for(String key : command.getKeys()){
+				helper.addArg(key.getBytes(ENCODING));
+			}
+		}
+
+		@Override
+		public void encode(Select command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(2);
+			helper.addArg(commandNames.get(CommandType.SELECT));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+		}
+
+		@Override
 		public void encode(Set command, ByteBuf out) {
 			EncodeHelper helper = new EncodeHelper(out);
 			helper.addArgc(3);
@@ -196,10 +333,65 @@ public class Redis2TextProtocol implements Protocol {
 			helper.addArg(command.getKey().getBytes(ENCODING));
 			helper.addArg(command.getValue());
 		}
+		
+		@Override
+		public void encode(Setbit command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(4);
+			helper.addArg(commandNames.get(CommandType.SETBIT));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getOffset());
+			helper.addArg(command.getValue());
+		}
+
+		@Override
+		public void encode(Setex command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(4);
+			helper.addArg(commandNames.get(CommandType.SETEX));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getExpiry());
+			helper.addArg(command.getValue());
+		}
 
 		@Override
 		public void encode(Setnx command, ByteBuf out) {
-			encode((Set) command, out);
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(3);
+			helper.addArg(commandNames.get(CommandType.SETNX));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getValue());
+		}
+
+		@Override
+		public void encode(Setrange command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(4);
+			helper.addArg(commandNames.get(CommandType.SETRANGE));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getOffset());
+			helper.addArg(command.getValue());
+		}
+
+		@Override
+		public void encode(Time command, ByteBuf out) {
+			encodeNoArgCommand(out, commandNames.get(CommandType.TIME));
+		}
+		
+		@Override
+		public void encode(Ttl command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(2);
+			helper.addArg(commandNames.get(CommandType.TTL));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+		}
+
+		@Override
+		public void encode(Type command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(2);
+			helper.addArg(commandNames.get(CommandType.TYPE));
+			helper.addArg(command.getKey().getBytes(ENCODING));
 		}
 
 		@Override
@@ -211,17 +403,6 @@ public class Redis2TextProtocol implements Protocol {
 			for (String key:command.getKeys()) {
 				helper.addArg(key.getBytes(ENCODING));
 			}
-		}	
-		
-
-		@Override
-		public void encode(Setex command, ByteBuf out) {
-			EncodeHelper helper = new EncodeHelper(out);
-			helper.addArgc(4);
-			helper.addArg(commandNames.get(CommandType.SETEX));
-			helper.addArg(command.getKey().getBytes(ENCODING));
-			helper.addArg(String.valueOf(command.getExpiry()).getBytes(ENCODING));
-			helper.addArg(command.getValue());
 		}
 		
 		private void encodeNoArgCommand(ByteBuf out, byte[] commandName) {
@@ -233,11 +414,14 @@ public class Redis2TextProtocol implements Protocol {
 		public void encode(Command command, ByteBuf out) throws OperationNotSupportedException {
 			if(command instanceof Decr) encode((Decr) command, out);
 			else if (command instanceof Decrby) encode((Decrby) command, out);
+			else if (command instanceof Del) encode((Del) command, out);
 			else if (command instanceof Discard) encode((Discard) command, out);
+			else if (command instanceof Dump) encode((Dump) command, out);
 			else if (command instanceof Echo) encode((Echo) command, out);
 			else if (command instanceof Exec) encode((Exec) command, out);
 			else if (command instanceof Exists) encode((Exists) command, out);
 			else if (command instanceof Expire) encode((Expire) command, out);
+			else if (command instanceof Expireat) encode((Expireat) command, out);
 			else if (command instanceof Get) encode((Get) command, out);
 			else if (command instanceof Getbit) encode((Getbit) command, out);
 			else if (command instanceof Getrange) encode((Getbit) command, out);
@@ -246,9 +430,26 @@ public class Redis2TextProtocol implements Protocol {
 			else if (command instanceof Keys) encode((Keys) command, out);
 			else if (command instanceof Multi) encode((Multi) command, out);
 			else if (command instanceof Ping) encode((Ping) command, out);
+			else if (command instanceof Rename) encode((Rename) command, out);
+			else if (command instanceof Renamex) encode((Renamex) command, out);
+			else if (command instanceof Role) encode((Role) command, out);
+			else if (command instanceof Rpop) encode((Rpop) command, out);
+			else if (command instanceof Rpoplpush) encode((Rpoplpush) command, out);
+			else if (command instanceof Rpush) encode((Rpush) command, out);
+			else if (command instanceof Rpushx) encode((Rpushx) command, out);
+			else if (command instanceof Sadd) encode((Sadd) command, out);
+			else if (command instanceof Scard) encode((Scard) command, out);
+			else if (command instanceof Sdiff) encode((Sdiff) command, out);
+			else if (command instanceof Sdiffstore) encode((Sdiffstore) command, out);
+			else if (command instanceof Select) encode((Select) command, out);
 			else if (command instanceof Set) encode((Set) command, out);
+			else if (command instanceof Setbit) encode((Setbit) command, out);
 			else if (command instanceof Setex) encode((Setex) command, out);
 			else if (command instanceof Setnx) encode((Setnx) command,out);
+			else if (command instanceof Setrange) encode((Setrange) command, out);
+			else if (command instanceof Time) encode((Time) command,out);
+			else if (command instanceof Ttl) encode((Ttl) command, out);
+			else if (command instanceof Type) encode((Type) command, out);
 			else if (command instanceof Watch) encode((Watch) command, out);
 			//TODO fill Commands
 			else throw new OperationNotSupportedException();
@@ -261,6 +462,7 @@ public class Redis2TextProtocol implements Protocol {
 				encode(command, out);
 			}
 		}
+
 	}
 	
 	public class Decoder implements Protocol.Decoder {
@@ -522,11 +724,14 @@ public class Redis2TextProtocol implements Protocol {
 	private static final Map<CommandType, byte[]> commandNames = new ImmutableMap.Builder<CommandType, byte[]>()
 			.put(CommandType.DECR, "DECR".getBytes(ENCODING))
 			.put(CommandType.DECRBY, "DECRBY".getBytes(ENCODING))
+			.put(CommandType.DEL, "DEL".getBytes(ENCODING))
 			.put(CommandType.DISCARD, "DISCARD".getBytes(ENCODING))
+			.put(CommandType.DUMP, "DUMP".getBytes(ENCODING))
 			.put(CommandType.ECHO, "ECHO".getBytes(ENCODING))
 			.put(CommandType.EXEC, "EXEC".getBytes(ENCODING))
 			.put(CommandType.EXISTS, "EXISTS".getBytes(ENCODING))
 			.put(CommandType.EXPIRE, "EXPIRE".getBytes(ENCODING))
+			.put(CommandType.EXPIREAT, "EXPIREAT".getBytes(ENCODING))
 			.put(CommandType.GET, "GET".getBytes(ENCODING))
 			.put(CommandType.GETBIT, "GETBIT".getBytes(ENCODING))
 			.put(CommandType.GETRANGE, "GETRANGE".getBytes(ENCODING))
@@ -535,9 +740,26 @@ public class Redis2TextProtocol implements Protocol {
 			.put(CommandType.KEYS, "KEYS".getBytes(ENCODING))
 			.put(CommandType.MULTI, "MULTI".getBytes(ENCODING))
 			.put(CommandType.PING, "PING".getBytes(ENCODING))
+			.put(CommandType.RENAME, "RENAME".getBytes(ENCODING))
+			.put(CommandType.RENAMEX, "RENAMEX".getBytes(ENCODING))
+			.put(CommandType.ROLE, "ROLE".getBytes(ENCODING))
+			.put(CommandType.RPOP, "RPOP".getBytes(ENCODING))
+			.put(CommandType.RPOPLPUSH, "RPOPLPUSH".getBytes(ENCODING))
+			.put(CommandType.RPUSH, "RPUSH".getBytes(ENCODING))
+			.put(CommandType.RPUSHX, "RPUSHX".getBytes(ENCODING))
+			.put(CommandType.SADD, "SADD".getBytes(ENCODING))
+			.put(CommandType.SCARD, "SCARD".getBytes(ENCODING))
+			.put(CommandType.SDIFF, "SDIFF".getBytes(ENCODING))
+			.put(CommandType.SDIFFSTORE, "SDIFFSTORE".getBytes(ENCODING))
+			.put(CommandType.SELECT, "SELECT".getBytes(ENCODING))
 			.put(CommandType.SET, "SET".getBytes(ENCODING))
+			.put(CommandType.SETBIT, "SETBIT".getBytes(ENCODING))
 			.put(CommandType.SETEX, "SETEX".getBytes(ENCODING))
 			.put(CommandType.SETNX, "SETNX".getBytes(ENCODING))
+			.put(CommandType.SETRANGE, "SETRANGE".getBytes(ENCODING))
+			.put(CommandType.TIME, "TIME".getBytes(ENCODING))
+			.put(CommandType.TTL, "TTL".getBytes(ENCODING))
+			.put(CommandType.TYPE, "TYPE".getBytes(ENCODING))
 			.put(CommandType.WATCH, "WATCH".getBytes(ENCODING))
 			.build();
 	//TODO fill Commands

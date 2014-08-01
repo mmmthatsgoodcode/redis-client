@@ -336,7 +336,7 @@ public class Redis2TextProtocolTest {
 		setexCommandBytes.write(Redis2TextProtocol.DELIMITER);	
 		
 		ByteBuf out = allocator.heapBuffer();
-		protocol.getEncoder().encode(new Setex("SomeKey", "SomeValue".getBytes(), 99), out);
+		protocol.getEncoder().encode(new Setex("SomeKey", "SomeValue".getBytes(), "99".getBytes(Redis2TextProtocol.ENCODING)), out);
 		
 		byte[] encoded = new byte[out.readableBytes()]; out.readBytes(encoded);
 		
@@ -352,7 +352,7 @@ public class Redis2TextProtocolTest {
 	-------------------- */
 	
 	@Test
-	public void testDecr() throws IOException {
+	public void testEncodeDecr() throws IOException {
 		ByteArrayOutputStream decrCommandBytes = new ByteArrayOutputStream();
 		
 		decrCommandBytes.write("*2".getBytes(Redis2TextProtocol.ENCODING));
@@ -380,7 +380,7 @@ public class Redis2TextProtocolTest {
 	}
 	
 	@Test
-	public void testDecrby() throws IOException {
+	public void testEncodeDecrby() throws IOException {
 		ByteArrayOutputStream decrbyCommandBytes = new ByteArrayOutputStream();
 		
 		decrbyCommandBytes.write("*3".getBytes(Redis2TextProtocol.ENCODING));
@@ -414,7 +414,7 @@ public class Redis2TextProtocolTest {
 	}
 	
 	@Test
-	public void testDiscard() throws IOException {
+	public void testEncodeDiscard() throws IOException {
 		ByteArrayOutputStream CommandBytes = new ByteArrayOutputStream();
 		
 		CommandBytes.write("*1".getBytes(Redis2TextProtocol.ENCODING));
@@ -464,7 +464,7 @@ public class Redis2TextProtocolTest {
 	}
 	
 	@Test
-	public void testExpire() throws IOException {
+	public void testEncodeExpire() throws IOException {
 		ByteArrayOutputStream CommandBytes = new ByteArrayOutputStream();
 		
 		CommandBytes.write("*3".getBytes(Redis2TextProtocol.ENCODING));
@@ -498,7 +498,41 @@ public class Redis2TextProtocolTest {
 	}
 	
 	@Test
-	public void testGetbit() throws IOException {
+	public void testEncodeExpireat() throws IOException {
+		ByteArrayOutputStream CommandBytes = new ByteArrayOutputStream();
+		
+		CommandBytes.write("*3".getBytes(Redis2TextProtocol.ENCODING));
+		CommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		CommandBytes.write("$8".getBytes(Redis2TextProtocol.ENCODING));
+		CommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		CommandBytes.write("EXPIREAT".getBytes(Redis2TextProtocol.ENCODING));
+		CommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		CommandBytes.write("$7".getBytes(Redis2TextProtocol.ENCODING));
+		CommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		CommandBytes.write("SomeKey".getBytes(Redis2TextProtocol.ENCODING));
+		CommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		CommandBytes.write("$9".getBytes(Redis2TextProtocol.ENCODING));
+		CommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		CommandBytes.write("TimeStamp".getBytes(Redis2TextProtocol.ENCODING));
+		CommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		ByteBuf out = allocator.heapBuffer();
+		protocol.getEncoder().encode(new Expireat("SomeKey", "TimeStamp".getBytes(Redis2TextProtocol.ENCODING)), out);
+		
+		byte[] encoded = new byte[out.readableBytes()];
+		out.readBytes(encoded);
+		
+		assertTrue(Arrays.equals(encoded, CommandBytes.toByteArray()));
+	}
+	
+	@Test
+	public void testEncodeGetbit() throws IOException {
 		ByteArrayOutputStream CommandBytes = new ByteArrayOutputStream();
 		
 		CommandBytes.write("*3".getBytes(Redis2TextProtocol.ENCODING));
@@ -532,7 +566,7 @@ public class Redis2TextProtocolTest {
 	}
 	
 	@Test
-	public void testGetrange() throws IOException {
+	public void testEncodeGetrange() throws IOException {
 		ByteArrayOutputStream CommandBytes = new ByteArrayOutputStream();
 		
 		CommandBytes.write("*4".getBytes(Redis2TextProtocol.ENCODING));
@@ -572,41 +606,7 @@ public class Redis2TextProtocolTest {
 	}
 	
 	@Test
-	public void testset() throws IOException {
-		ByteArrayOutputStream CommandBytes = new ByteArrayOutputStream();
-		
-		CommandBytes.write("*3".getBytes(Redis2TextProtocol.ENCODING));
-		CommandBytes.write(Redis2TextProtocol.DELIMITER);
-		
-		CommandBytes.write("$6".getBytes(Redis2TextProtocol.ENCODING));
-		CommandBytes.write(Redis2TextProtocol.DELIMITER);
-		
-		CommandBytes.write("GETSET".getBytes(Redis2TextProtocol.ENCODING));
-		CommandBytes.write(Redis2TextProtocol.DELIMITER);
-		
-		CommandBytes.write("$7".getBytes(Redis2TextProtocol.ENCODING));
-		CommandBytes.write(Redis2TextProtocol.DELIMITER);
-		
-		CommandBytes.write("SomeKey".getBytes(Redis2TextProtocol.ENCODING));
-		CommandBytes.write(Redis2TextProtocol.DELIMITER);
-		
-		CommandBytes.write("$5".getBytes(Redis2TextProtocol.ENCODING));
-		CommandBytes.write(Redis2TextProtocol.DELIMITER);
-		
-		CommandBytes.write("Value".getBytes(Redis2TextProtocol.ENCODING));
-		CommandBytes.write(Redis2TextProtocol.DELIMITER);
-		
-		ByteBuf out = allocator.heapBuffer();
-		protocol.getEncoder().encode(new Getset("SomeKey", "Value".getBytes(Redis2TextProtocol.ENCODING)), out);
-		
-		byte[] encoded = new byte[out.readableBytes()];
-		out.readBytes(encoded);
-		
-		assertTrue(Arrays.equals(encoded, CommandBytes.toByteArray()));
-	}
-	
-	@Test
-	public void testIncr() throws IOException {
+	public void testEncodeIncr() throws IOException {
 		ByteArrayOutputStream decrCommandBytes = new ByteArrayOutputStream();
 		
 		decrCommandBytes.write("*2".getBytes(Redis2TextProtocol.ENCODING));
@@ -634,7 +634,7 @@ public class Redis2TextProtocolTest {
 	}
 	
 	@Test
-	public void testKeys() throws IOException {
+	public void testEncodeKeys() throws IOException {
 		ByteArrayOutputStream decrCommandBytes = new ByteArrayOutputStream();
 		
 		decrCommandBytes.write("*2".getBytes(Redis2TextProtocol.ENCODING));
@@ -661,7 +661,972 @@ public class Redis2TextProtocolTest {
 		assertTrue(Arrays.equals(encoded, decrCommandBytes.toByteArray()));
 	}
 	
+	@Test
+	public void testEncodeDelOne() throws IOException {
+		ByteArrayOutputStream decrCommandBytes = new ByteArrayOutputStream();
+		
+		decrCommandBytes.write("*2".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$3".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("DEL".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$7".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SomeKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		ByteBuf out = allocator.heapBuffer();
+		protocol.getEncoder().encode(new Del("SomeKey"), out);
+		
+		byte[] encoded = new byte[out.readableBytes()];
+		out.readBytes(encoded);
+		
+		assertTrue(Arrays.equals(encoded, decrCommandBytes.toByteArray()));
+	}
+	
+	@Test
+	public void testEncodeDelMany() throws IOException {
+		ByteArrayOutputStream decrCommandBytes = new ByteArrayOutputStream();
+		
+		decrCommandBytes.write("*5".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$3".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("DEL".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$8".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("FirstKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$9".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SecondKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$8".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("ThirdKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$9".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("FourthKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		ByteBuf out = allocator.heapBuffer();
+		protocol.getEncoder().encode(new Del("FirstKey","SecondKey","ThirdKey","FourthKey"), out);
+		
+		byte[] encoded = new byte[out.readableBytes()];
+		out.readBytes(encoded);
+		
+		assertTrue(Arrays.equals(encoded, decrCommandBytes.toByteArray()));
+	}
+	
+	@Test
+	public void testEncodeDump() throws IOException {
+		ByteArrayOutputStream decrCommandBytes = new ByteArrayOutputStream();
+		
+		decrCommandBytes.write("*2".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$4".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("DUMP".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$7".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SomeKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		ByteBuf out = allocator.heapBuffer();
+		protocol.getEncoder().encode(new Dump("SomeKey"), out);
+		
+		byte[] encoded = new byte[out.readableBytes()];
+		out.readBytes(encoded);
+		
+		assertTrue(Arrays.equals(encoded, decrCommandBytes.toByteArray()));
+	}
 
+	@Test
+	public void testEncodeGetset() throws IOException {
+		ByteArrayOutputStream decrCommandBytes = new ByteArrayOutputStream();
+
+		decrCommandBytes.write("*3".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$6".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("GETSET".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$7".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SomeKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$1".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("5".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		ByteBuf out = allocator.heapBuffer();
+		protocol.getEncoder().encode(new Getset("SomeKey", "5".getBytes(Redis2TextProtocol.ENCODING)), out);
+		
+		byte[] encoded = new byte[out.readableBytes()];
+		out.readBytes(encoded);
+		
+		assertTrue(Arrays.equals(encoded, decrCommandBytes.toByteArray()));
+	}
+	
+	@Test
+	public void testEncodeRename() throws IOException {
+		ByteArrayOutputStream decrCommandBytes = new ByteArrayOutputStream();
+
+		decrCommandBytes.write("*3".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$6".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("RENAME".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$7".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SomeKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$6".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("NewKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		ByteBuf out = allocator.heapBuffer();
+		protocol.getEncoder().encode(new Rename("SomeKey", "NewKey"), out);
+		
+		byte[] encoded = new byte[out.readableBytes()];
+		out.readBytes(encoded);
+		
+		assertTrue(Arrays.equals(encoded, decrCommandBytes.toByteArray()));
+	}
+
+	@Test
+	public void testEncodeRenamex() throws IOException {
+		ByteArrayOutputStream decrCommandBytes = new ByteArrayOutputStream();
+
+		decrCommandBytes.write("*3".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$7".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("RENAMEX".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$7".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SomeKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$6".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("NewKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		ByteBuf out = allocator.heapBuffer();
+		protocol.getEncoder().encode(new Renamex("SomeKey", "NewKey"), out);
+		
+		byte[] encoded = new byte[out.readableBytes()];
+		out.readBytes(encoded);
+		
+		assertTrue(Arrays.equals(encoded, decrCommandBytes.toByteArray()));
+	}
+	
+	@Test
+	public void testEncodeRole() throws IOException {
+		ByteArrayOutputStream decrCommandBytes = new ByteArrayOutputStream();
+
+		decrCommandBytes.write("*1".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$4".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("ROLE".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		ByteBuf out = allocator.heapBuffer();
+		protocol.getEncoder().encode(new Role(), out);
+		
+		byte[] encoded = new byte[out.readableBytes()];
+		out.readBytes(encoded);
+		
+		assertTrue(Arrays.equals(encoded, decrCommandBytes.toByteArray()));
+	}
+	
+	@Test
+	public void testEncodeRpop() throws IOException {
+		ByteArrayOutputStream decrCommandBytes = new ByteArrayOutputStream();
+
+		decrCommandBytes.write("*2".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$4".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("RPOP".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$7".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SomeKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		ByteBuf out = allocator.heapBuffer();
+		protocol.getEncoder().encode(new Rpop("SomeKey"), out);
+		
+		byte[] encoded = new byte[out.readableBytes()];
+		out.readBytes(encoded);
+		
+		assertTrue(Arrays.equals(encoded, decrCommandBytes.toByteArray()));
+	}
+	
+	@Test
+	public void testEncodeRpoplpush() throws IOException {
+		ByteArrayOutputStream decrCommandBytes = new ByteArrayOutputStream();
+
+		decrCommandBytes.write("*3".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$9".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("RPOPLPUSH".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$9".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SourceKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$14".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("DestinationKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		ByteBuf out = allocator.heapBuffer();
+		protocol.getEncoder().encode(new Rpoplpush("SourceKey","DestinationKey".getBytes(Redis2TextProtocol.ENCODING)), out);
+		
+		byte[] encoded = new byte[out.readableBytes()];
+		out.readBytes(encoded);
+		
+		assertTrue(Arrays.equals(encoded, decrCommandBytes.toByteArray()));
+	}
+	
+	@Test
+	public void testEncodeRpushOne() throws IOException {
+		ByteArrayOutputStream decrCommandBytes = new ByteArrayOutputStream();
+		
+		decrCommandBytes.write("*3".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$5".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("RPUSH".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$7".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SomeKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$9".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SomeValue".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		ByteBuf out = allocator.heapBuffer();
+		protocol.getEncoder().encode(new Rpush("SomeKey","SomeValue"), out);
+		
+		byte[] encoded = new byte[out.readableBytes()];
+		out.readBytes(encoded);
+		
+		assertTrue(Arrays.equals(encoded, decrCommandBytes.toByteArray()));
+	}
+	
+	@Test
+	public void testEncodeRpushMany() throws IOException {
+		ByteArrayOutputStream decrCommandBytes = new ByteArrayOutputStream();
+		
+		decrCommandBytes.write("*5".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$5".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("RPUSH".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$7".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SomeKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$10".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("FirstValue".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$11".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SecondValue".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$10".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("ThirdValue".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		ByteBuf out = allocator.heapBuffer();
+		protocol.getEncoder().encode(new Rpush("SomeKey","FirstValue","SecondValue","ThirdValue"), out);
+		
+		byte[] encoded = new byte[out.readableBytes()];
+		out.readBytes(encoded);
+		
+		assertTrue(Arrays.equals(encoded, decrCommandBytes.toByteArray()));
+	}
+	
+	@Test
+	public void testEncodeRpushx() throws IOException {
+		ByteArrayOutputStream decrCommandBytes = new ByteArrayOutputStream();
+		
+		decrCommandBytes.write("*3".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$6".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("RPUSHX".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$7".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SomeKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$9".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SomeValue".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		ByteBuf out = allocator.heapBuffer();
+		protocol.getEncoder().encode(new Rpushx("SomeKey","SomeValue"), out);
+		
+		byte[] encoded = new byte[out.readableBytes()];
+		out.readBytes(encoded);
+		
+		assertTrue(Arrays.equals(encoded, decrCommandBytes.toByteArray()));
+	}
+	
+	@Test
+	public void testEncodeSaddOne() throws IOException {
+		ByteArrayOutputStream decrCommandBytes = new ByteArrayOutputStream();
+		
+		decrCommandBytes.write("*3".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$4".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SADD".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$7".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SomeKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$10".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SomeMember".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		ByteBuf out = allocator.heapBuffer();
+		protocol.getEncoder().encode(new Sadd("SomeKey","SomeMember"), out);
+		
+		byte[] encoded = new byte[out.readableBytes()];
+		out.readBytes(encoded);
+		
+		assertTrue(Arrays.equals(encoded, decrCommandBytes.toByteArray()));
+	}
+	
+	@Test
+	public void testEncodeSaddMany() throws IOException {
+		ByteArrayOutputStream decrCommandBytes = new ByteArrayOutputStream();
+		
+		decrCommandBytes.write("*5".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$4".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SADD".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$7".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SomeKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$11".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("FirstMember".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$12".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SecondMember".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$11".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("ThirdMember".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		ByteBuf out = allocator.heapBuffer();
+		protocol.getEncoder().encode(new Sadd("SomeKey","FirstMember","SecondMember","ThirdMember"), out);
+		
+		byte[] encoded = new byte[out.readableBytes()];
+		out.readBytes(encoded);
+		
+		assertTrue(Arrays.equals(encoded, decrCommandBytes.toByteArray()));
+	}
+	
+	@Test
+	public void testEncodeScard() throws IOException {
+		ByteArrayOutputStream decrCommandBytes = new ByteArrayOutputStream();
+		
+		decrCommandBytes.write("*2".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$5".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SCARD".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$7".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SomeKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		ByteBuf out = allocator.heapBuffer();
+		protocol.getEncoder().encode(new Scard("SomeKey"), out);
+		
+		byte[] encoded = new byte[out.readableBytes()];
+		out.readBytes(encoded);
+		
+		assertTrue(Arrays.equals(encoded, decrCommandBytes.toByteArray()));
+	}
+	
+	@Test
+	public void testEncodeSdiffOne() throws IOException {
+		ByteArrayOutputStream decrCommandBytes = new ByteArrayOutputStream();
+		
+		decrCommandBytes.write("*2".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$5".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SDIFF".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$7".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SomeKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		ByteBuf out = allocator.heapBuffer();
+		protocol.getEncoder().encode(new Sdiff("SomeKey"), out);
+		
+		byte[] encoded = new byte[out.readableBytes()];
+		out.readBytes(encoded);
+		
+		assertTrue(Arrays.equals(encoded, decrCommandBytes.toByteArray()));
+	}
+	
+	@Test
+	public void testEncodeSdiffMany() throws IOException {
+		ByteArrayOutputStream decrCommandBytes = new ByteArrayOutputStream();
+		
+		decrCommandBytes.write("*5".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$5".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SDIFF".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$7".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SomeKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$4".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("Key2".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$4".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("Key3".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$4".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("Key4".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		ByteBuf out = allocator.heapBuffer();
+		protocol.getEncoder().encode(new Sdiff("SomeKey","Key2","Key3","Key4"), out);
+		
+		byte[] encoded = new byte[out.readableBytes()];
+		out.readBytes(encoded);
+		
+		assertTrue(Arrays.equals(encoded, decrCommandBytes.toByteArray()));
+	}
+	
+	@Test
+	public void testEncodeSdiffstoreOne() throws IOException {
+		ByteArrayOutputStream decrCommandBytes = new ByteArrayOutputStream();
+		
+		decrCommandBytes.write("*3".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$10".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SDIFFSTORE".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$11".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("Destination".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$7".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SomeKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		ByteBuf out = allocator.heapBuffer();
+		protocol.getEncoder().encode(new Sdiffstore("Destination","SomeKey"), out);
+		
+		byte[] encoded = new byte[out.readableBytes()];
+		out.readBytes(encoded);
+		
+		assertTrue(Arrays.equals(encoded, decrCommandBytes.toByteArray()));
+	}
+	
+	@Test
+	public void testEncodeSdiffstoreMany() throws IOException {
+		ByteArrayOutputStream decrCommandBytes = new ByteArrayOutputStream();
+		
+		decrCommandBytes.write("*6".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$10".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SDIFFSTORE".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$11".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("Destination".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$7".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SomeKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$4".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("Key2".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$4".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("Key3".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$4".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("Key4".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		ByteBuf out = allocator.heapBuffer();
+		protocol.getEncoder().encode(new Sdiffstore("Destination","SomeKey","Key2","Key3","Key4"), out);
+		
+		byte[] encoded = new byte[out.readableBytes()];
+		out.readBytes(encoded);
+		
+		assertTrue(Arrays.equals(encoded, decrCommandBytes.toByteArray()));
+	}
+	
+	@Test
+	public void testEncodeSelect() throws IOException {
+		ByteArrayOutputStream decrCommandBytes = new ByteArrayOutputStream();
+		
+		decrCommandBytes.write("*2".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$6".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SELECT".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$5".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("Index".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		ByteBuf out = allocator.heapBuffer();
+		protocol.getEncoder().encode(new Select("Index"), out);
+		
+		byte[] encoded = new byte[out.readableBytes()];
+		out.readBytes(encoded);
+		
+		assertTrue(Arrays.equals(encoded, decrCommandBytes.toByteArray()));
+	}
+	
+	@Test
+	public void testEncodeSetbit() throws IOException {
+		ByteArrayOutputStream decrCommandBytes = new ByteArrayOutputStream();
+		
+		decrCommandBytes.write("*4".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$6".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SETBIT".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$7".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SomeKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$6".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("Offset".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$5".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("Value".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		ByteBuf out = allocator.heapBuffer();
+		protocol.getEncoder().encode(new Setbit("SomeKey","Offset".getBytes(Redis2TextProtocol.ENCODING),"Value".getBytes(Redis2TextProtocol.ENCODING)), out);
+		
+		byte[] encoded = new byte[out.readableBytes()];
+		out.readBytes(encoded);
+		
+		assertTrue(Arrays.equals(encoded, decrCommandBytes.toByteArray()));
+	}
+	
+	@Test
+	public void testEncodeSetnx() throws IOException {
+		ByteArrayOutputStream decrCommandBytes = new ByteArrayOutputStream();
+		
+		decrCommandBytes.write("*3".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$5".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SETNX".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$7".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SomeKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+
+		decrCommandBytes.write("$5".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("Value".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		ByteBuf out = allocator.heapBuffer();
+		protocol.getEncoder().encode(new Setnx("SomeKey", "Value".getBytes(Redis2TextProtocol.ENCODING)), out);
+		
+		byte[] encoded = new byte[out.readableBytes()];
+		out.readBytes(encoded);
+		
+		assertTrue(Arrays.equals(encoded, decrCommandBytes.toByteArray()));
+	}
+	
+	@Test
+	public void testEncodeSetrange() throws IOException {
+		ByteArrayOutputStream decrCommandBytes = new ByteArrayOutputStream();
+		
+		decrCommandBytes.write("*4".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$8".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SETRANGE".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$7".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SomeKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+
+		decrCommandBytes.write("$6".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("Offset".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$5".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("Value".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		ByteBuf out = allocator.heapBuffer();
+		protocol.getEncoder().encode(new Setrange("SomeKey", "Offset".getBytes(Redis2TextProtocol.ENCODING), "Value".getBytes(Redis2TextProtocol.ENCODING)), out);
+		
+		byte[] encoded = new byte[out.readableBytes()];
+		out.readBytes(encoded);
+		
+		assertTrue(Arrays.equals(encoded, decrCommandBytes.toByteArray()));
+	}
+	
+	@Test
+	public void testEncodeTime() throws IOException {
+		ByteArrayOutputStream decrCommandBytes = new ByteArrayOutputStream();
+		
+		decrCommandBytes.write("*1".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$4".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("TIME".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+
+		ByteBuf out = allocator.heapBuffer();
+		protocol.getEncoder().encode(new Time(), out);
+		
+		byte[] encoded = new byte[out.readableBytes()];
+		out.readBytes(encoded);
+		
+		assertTrue(Arrays.equals(encoded, decrCommandBytes.toByteArray()));
+	}
+
+	@Test
+	public void testEncodeTtl() throws IOException {
+		ByteArrayOutputStream decrCommandBytes = new ByteArrayOutputStream();
+		
+		decrCommandBytes.write("*2".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$3".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("TTL".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+
+		decrCommandBytes.write("$7".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SomeKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		ByteBuf out = allocator.heapBuffer();
+		protocol.getEncoder().encode(new Ttl("SomeKey"), out);
+		
+		byte[] encoded = new byte[out.readableBytes()];
+		out.readBytes(encoded);
+		
+		assertTrue(Arrays.equals(encoded, decrCommandBytes.toByteArray()));
+	}
+
+	@Test
+	public void testEncodeType() throws IOException {
+		ByteArrayOutputStream decrCommandBytes = new ByteArrayOutputStream();
+		
+		decrCommandBytes.write("*2".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$4".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("TYPE".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+
+		decrCommandBytes.write("$7".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SomeKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		ByteBuf out = allocator.heapBuffer();
+		protocol.getEncoder().encode(new Type("SomeKey"), out);
+		
+		byte[] encoded = new byte[out.readableBytes()];
+		out.readBytes(encoded);
+		
+		assertTrue(Arrays.equals(encoded, decrCommandBytes.toByteArray()));
+	}
+
+	@Test
+	public void testEncodeWatchOne() throws IOException {
+		ByteArrayOutputStream decrCommandBytes = new ByteArrayOutputStream();
+		
+		decrCommandBytes.write("*2".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$5".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("WATCH".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+
+		decrCommandBytes.write("$7".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SomeKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		ByteBuf out = allocator.heapBuffer();
+		protocol.getEncoder().encode(new Watch("SomeKey"), out);
+		
+		byte[] encoded = new byte[out.readableBytes()];
+		out.readBytes(encoded);
+		
+		assertTrue(Arrays.equals(encoded, decrCommandBytes.toByteArray()));
+	}
+	
+	@Test
+	public void testEncodeWatchMany() throws IOException {
+		ByteArrayOutputStream decrCommandBytes = new ByteArrayOutputStream();
+		
+		decrCommandBytes.write("*5".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("$5".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("WATCH".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+
+		decrCommandBytes.write("$8".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("FirstKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+
+		decrCommandBytes.write("$9".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("SecondKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+
+		decrCommandBytes.write("$8".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("ThirdKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+
+		decrCommandBytes.write("$9".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		decrCommandBytes.write("FourthKey".getBytes(Redis2TextProtocol.ENCODING));
+		decrCommandBytes.write(Redis2TextProtocol.DELIMITER);
+		
+		ByteBuf out = allocator.heapBuffer();
+		protocol.getEncoder().encode(new Watch("FirstKey","SecondKey","ThirdKey","FourthKey"), out);
+		
+		byte[] encoded = new byte[out.readableBytes()];
+		out.readBytes(encoded);
+		
+		assertTrue(Arrays.equals(encoded, decrCommandBytes.toByteArray()));
+	}
+	
+	
+	
 	/* Replies
 	----------- */
 	

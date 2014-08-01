@@ -5,7 +5,7 @@ import com.mmmthatsgoodcode.redis.protocol.reply.StatusReply;
 
 public class Set extends KeyedCommand<StatusReply> {
 
-	private byte[] value;
+	private final byte[] value;
 	
 	public Set(String key, byte[] value) {
 		super(key);
