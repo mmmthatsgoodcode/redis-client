@@ -14,7 +14,7 @@ import io.netty.buffer.ByteBufAllocator;
 public interface Protocol {
 	
 	public enum ReplyType { BULK, ERROR, INTEGER, MULTI_BULK, STATUS, UNKNOWN }
-	public enum CommandType { DECR, DECRBY, DEL, DISCARD, DUMP, ECHO, EXEC,
+	public enum CommandType { APPEND, AUTH, BGSAVE, DECR, DECRBY, DEL, DISCARD, DUMP, ECHO, EXEC,
 							EXISTS, EXPIRE, EXPIREAT, GET, GETBIT, GETRANGE, GETSET,
 							INCR, KEYS, MULTI, PING, RENAME, RENAMEX, ROLE, RPOP, RPOPLPUSH, RPUSH, RPUSHX, SADD, SCARD,
 							SDIFF, SDIFFSTORE, SELECT, SET, SETBIT, SETEX,
@@ -26,6 +26,9 @@ public interface Protocol {
 	public interface Encoder {
 
 		//TODO fill Commands
+		public void encode(Append command, ByteBuf out);
+		public void encode(Auth command, ByteBuf out);
+		public void encode(Bgsave command, ByteBuf out);
 		public void encode(Decr command, ByteBuf out);
 		public void encode(Decrby command, ByteBuf out);
 		public void encode(Del command, ByteBuf out);

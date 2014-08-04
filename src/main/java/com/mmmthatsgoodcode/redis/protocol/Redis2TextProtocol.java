@@ -72,7 +72,29 @@ public class Redis2TextProtocol implements Protocol {
 				return this.out;
 			}
 		}
-		
+
+		@Override
+		public void encode(Append command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(3);
+			helper.addArg(commandNames.get(CommandType.APPEND));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getValue());
+		}
+
+		@Override
+		public void encode(Auth command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(2);
+			helper.addArg(commandNames.get(CommandType.AUTH));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+		}
+
+		@Override
+		public void encode(Bgsave command, ByteBuf out) {
+			encodeNoArgCommand(out, commandNames.get(CommandType.BGSAVE));
+		}
+
 		@Override
 		public void encode(Decr command, ByteBuf out) {
 			EncodeHelper helper = new EncodeHelper(out);
@@ -412,7 +434,10 @@ public class Redis2TextProtocol implements Protocol {
 		}
 		
 		public void encode(Command command, ByteBuf out) throws OperationNotSupportedException {
-			if(command instanceof Decr) encode((Decr) command, out);
+			if (command instanceof Append) encode((Append) command, out);
+			else if (command instanceof Auth) encode((Auth) command, out);
+			else if (command instanceof Bgsave) encode((Bgsave) command, out);
+			else if (command instanceof Decr) encode((Decr) command, out);
 			else if (command instanceof Decrby) encode((Decrby) command, out);
 			else if (command instanceof Del) encode((Del) command, out);
 			else if (command instanceof Discard) encode((Discard) command, out);
@@ -722,6 +747,9 @@ public class Redis2TextProtocol implements Protocol {
 
 
 	private static final Map<CommandType, byte[]> commandNames = new ImmutableMap.Builder<CommandType, byte[]>()
+			.put(CommandType.APPEND, "APPEND".getBytes(ENCODING))
+			.put(CommandType.AUTH, "AUTH".getBytes(ENCODING))
+			.put(CommandType.BGSAVE, "BGSAVE".getBytes(ENCODING))
 			.put(CommandType.DECR, "DECR".getBytes(ENCODING))
 			.put(CommandType.DECRBY, "DECRBY".getBytes(ENCODING))
 			.put(CommandType.DEL, "DEL".getBytes(ENCODING))
