@@ -14,11 +14,13 @@ import io.netty.buffer.ByteBufAllocator;
 public interface Protocol {
 	
 	public enum ReplyType { BULK, ERROR, INTEGER, MULTI_BULK, STATUS, UNKNOWN }
-	public enum CommandType { APPEND, AUTH, BGSAVE, DECR, DECRBY, DEL, DISCARD, DUMP, ECHO, EXEC,
-							EXISTS, EXPIRE, EXPIREAT, GET, GETBIT, GETRANGE, GETSET,
-							INCR, KEYS, MULTI, PING, RENAME, RENAMEX, ROLE, RPOP, RPOPLPUSH, RPUSH, RPUSHX, SADD, SCARD,
-							SDIFF, SDIFFSTORE, SELECT, SET, SETBIT, SETEX,
-							SETNX, SETRANGE, TIME, TTL, TYPE, WATCH
+	public enum CommandType { APPEND, AUTH, BGREWRITEAOF, BGSAVE, BITCOUNT, BITOP, BITPOS, BLPOP, BRPOP,
+							BRPOPLPUSH, CLIENTGETNAME, CLIENTLIST, COMMAND, COMMANDCOUNT,COMMANDGETKEYS,
+							COMMANDINFO, CONFIGGET, CONFIGRESETSTAT, CONFIGREWRITE, CONFIGSET, DECR, DECRBY,
+							DEL, DISCARD, DUMP, ECHO, EXEC, EXISTS, EXPIRE, EXPIREAT, GET, GETBIT, GETRANGE,
+							GETSET, INCR, KEYS, LPOP, MULTI, PING, RENAME, RENAMEX, ROLE, RPOP, RPOPLPUSH, RPUSH,
+							RPUSHX, SADD, SCARD, SDIFF, SDIFFSTORE, SELECT, SET, SETBIT, SETEX, SETNX,
+							SETRANGE, TIME, TTL, TYPE, WATCH
 							}
 	
 	public ByteBufAllocator getByteBufAllocator();
@@ -28,7 +30,24 @@ public interface Protocol {
 		//TODO fill Commands
 		public void encode(Append command, ByteBuf out);
 		public void encode(Auth command, ByteBuf out);
+		public void encode(Bgrewriteaof command, ByteBuf out);
 		public void encode(Bgsave command, ByteBuf out);
+		public void encode(Bitcount command, ByteBuf out);
+		public void encode(Bitop command, ByteBuf out);
+		public void encode(Bitpos command, ByteBuf out);
+		public void encode(Blpop command, ByteBuf out);
+		public void encode(Brpop command, ByteBuf out);
+		public void encode(Brpoplpush command, ByteBuf out);
+		public void encode(Clientgetname command, ByteBuf out);
+		public void encode(Clientlist command, ByteBuf out);
+		public void encode(com.mmmthatsgoodcode.redis.protocol.command.Command command, ByteBuf out);
+		public void encode(Commandcount command, ByteBuf out);
+		public void encode(Commandgetkeys command, ByteBuf out);
+		public void encode(Commandinfo command, ByteBuf out);
+		public void encode(Configget command, ByteBuf out);
+		public void encode(Configresetstat command, ByteBuf out);
+		public void encode(Configrewrite command, ByteBuf out);
+		public void encode(Configset command, ByteBuf out);
 		public void encode(Decr command, ByteBuf out);
 		public void encode(Decrby command, ByteBuf out);
 		public void encode(Del command, ByteBuf out);
@@ -45,6 +64,7 @@ public interface Protocol {
 		public void encode(Getset command, ByteBuf out);
 		public void encode(Incr command, ByteBuf out);
 		public void encode(Keys command, ByteBuf out);
+		public void encode(Lpop command, ByteBuf out);
 		public void encode(Multi command, ByteBuf out);
 		public void encode(Ping command, ByteBuf out);
 		public void encode(Rename command, ByteBuf out);
@@ -68,7 +88,7 @@ public interface Protocol {
 		public void encode(Ttl command, ByteBuf out);
 		public void encode(Type command, ByteBuf out);
 		public void encode(Watch command, ByteBuf out);
-		public void encode(Command command, ByteBuf out) throws OperationNotSupportedException;		
+		public void encode(com.mmmthatsgoodcode.redis.protocol.Command command, ByteBuf out) throws OperationNotSupportedException;		
 		public void encode(Transaction command, ByteBuf out) throws OperationNotSupportedException;
 		
 	}

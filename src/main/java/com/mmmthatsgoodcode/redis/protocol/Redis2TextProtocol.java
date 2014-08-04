@@ -91,8 +91,120 @@ public class Redis2TextProtocol implements Protocol {
 		}
 
 		@Override
+		public void encode(Bgrewriteaof command, ByteBuf out) {
+			encodeNoArgCommand(out, commandNames.get(CommandType.BGREWRITEAOF));
+		}
+
+		@Override
 		public void encode(Bgsave command, ByteBuf out) {
 			encodeNoArgCommand(out, commandNames.get(CommandType.BGSAVE));
+		}
+
+		@Override
+		public void encode(Bitcount command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(4);
+			helper.addArg(commandNames.get(CommandType.BITCOUNT));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getStart());
+			helper.addArg(command.getEnd());
+		}
+
+		@Override
+		public void encode(Bitop command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(3+command.getKeys().size());
+			helper.addArg(commandNames.get(CommandType.BITOP));
+			helper.addArg(command.getOperation());
+			helper.addArg(command.getDestinationKey());
+			
+			for(byte[] key : command.getKeys()){
+				helper.addArg(key);
+			}
+		}
+
+		@Override
+		public void encode(Bitpos command, ByteBuf out) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void encode(Blpop command, ByteBuf out) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void encode(Brpop command, ByteBuf out) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void encode(Brpoplpush command, ByteBuf out) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void encode(Clientgetname command, ByteBuf out) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void encode(Clientlist command, ByteBuf out) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void encode(com.mmmthatsgoodcode.redis.protocol.command.Command command, ByteBuf out) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void encode(Commandcount command, ByteBuf out) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void encode(Commandgetkeys command, ByteBuf out) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void encode(Commandinfo command, ByteBuf out) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void encode(Configget command, ByteBuf out) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void encode(Configresetstat command, ByteBuf out) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void encode(Configrewrite command, ByteBuf out) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void encode(Configset command, ByteBuf out) {
+			// TODO Auto-generated method stub
+			
 		}
 
 		@Override
@@ -226,6 +338,14 @@ public class Redis2TextProtocol implements Protocol {
 			helper.addArg(commandNames.get(CommandType.KEYS));
 			helper.addArg(command.getKey().getBytes(ENCODING));
 		}
+
+		@Override
+		public void encode(Lpop command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(2);
+			helper.addArg(commandNames.get(CommandType.LPOP));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+		}
 		
 		@Override
 		public void encode(Multi command, ByteBuf out) {
@@ -273,7 +393,7 @@ public class Redis2TextProtocol implements Protocol {
 			EncodeHelper helper = new EncodeHelper(out);
 			helper.addArgc(3);
 			helper.addArg(commandNames.get(CommandType.RPOPLPUSH));
-			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getSource());
 			helper.addArg(command.getDestination());
 		}
 
@@ -433,10 +553,27 @@ public class Redis2TextProtocol implements Protocol {
 			helper.addArg(commandName);
 		}
 		
-		public void encode(Command command, ByteBuf out) throws OperationNotSupportedException {
+		public void encode(com.mmmthatsgoodcode.redis.protocol.Command command, ByteBuf out) throws OperationNotSupportedException {
 			if (command instanceof Append) encode((Append) command, out);
 			else if (command instanceof Auth) encode((Auth) command, out);
+			else if (command instanceof Bgrewriteaof) encode((Bgrewriteaof) command, out);
 			else if (command instanceof Bgsave) encode((Bgsave) command, out);
+			else if (command instanceof Bitcount) encode((Bitcount) command, out);
+			else if (command instanceof Bitop) encode((Bitop) command, out);
+			else if (command instanceof Bitpos) encode((Bitpos) command, out);
+			else if (command instanceof Blpop) encode((Blpop) command, out);
+			else if (command instanceof Brpop) encode((Brpop) command, out);
+			else if (command instanceof Brpoplpush) encode((Brpoplpush) command, out);
+			else if (command instanceof Clientgetname) encode((Clientgetname) command, out);
+			else if (command instanceof Clientlist) encode((Clientlist) command, out);
+			else if (command instanceof com.mmmthatsgoodcode.redis.protocol.command.Command) encode((com.mmmthatsgoodcode.redis.protocol.command.Command) command, out);
+			else if (command instanceof Commandcount) encode((Commandcount) command, out);
+			else if (command instanceof Commandgetkeys) encode((Commandgetkeys) command, out);
+			else if (command instanceof Commandinfo) encode((Commandinfo) command, out);
+			else if (command instanceof Configget) encode((Configget) command, out);
+			else if (command instanceof Configresetstat) encode((Configresetstat) command, out);
+			else if (command instanceof Configrewrite) encode((Configrewrite) command, out);
+			else if (command instanceof Configset) encode((Configset) command, out);
 			else if (command instanceof Decr) encode((Decr) command, out);
 			else if (command instanceof Decrby) encode((Decrby) command, out);
 			else if (command instanceof Del) encode((Del) command, out);
@@ -453,6 +590,8 @@ public class Redis2TextProtocol implements Protocol {
 			else if (command instanceof Getset) encode((Getset) command, out);
 			else if (command instanceof Incr) encode((Incr) command, out);
 			else if (command instanceof Keys) encode((Keys) command, out);
+			else if (command instanceof Lpop) encode((Lpop) command, out);
+			else if (command instanceof Lpop) encode((Lpop) command, out);
 			else if (command instanceof Multi) encode((Multi) command, out);
 			else if (command instanceof Ping) encode((Ping) command, out);
 			else if (command instanceof Rename) encode((Rename) command, out);
@@ -487,7 +626,6 @@ public class Redis2TextProtocol implements Protocol {
 				encode(command, out);
 			}
 		}
-
 	}
 	
 	public class Decoder implements Protocol.Decoder {
@@ -749,7 +887,24 @@ public class Redis2TextProtocol implements Protocol {
 	private static final Map<CommandType, byte[]> commandNames = new ImmutableMap.Builder<CommandType, byte[]>()
 			.put(CommandType.APPEND, "APPEND".getBytes(ENCODING))
 			.put(CommandType.AUTH, "AUTH".getBytes(ENCODING))
+			.put(CommandType.BGREWRITEAOF, "BGREWRITEAOF".getBytes(ENCODING))
 			.put(CommandType.BGSAVE, "BGSAVE".getBytes(ENCODING))
+			.put(CommandType.BITCOUNT, "BITCOUNT".getBytes(ENCODING))
+			.put(CommandType.BITOP, "BITOP".getBytes(ENCODING))
+			.put(CommandType.BITPOS, "BITPOS".getBytes(ENCODING))
+			.put(CommandType.BLPOP, "BLPOP".getBytes(ENCODING))
+			.put(CommandType.BRPOP, "BRPOP".getBytes(ENCODING))
+			.put(CommandType.BRPOPLPUSH, "BRPOPLPUSH".getBytes(ENCODING))
+			.put(CommandType.CLIENTGETNAME, "CLIENTGETNAME".getBytes(ENCODING))
+			.put(CommandType.CLIENTLIST, "CLIENTLIST".getBytes(ENCODING))
+			.put(CommandType.COMMAND, "COMMAND".getBytes(ENCODING))
+			.put(CommandType.COMMANDCOUNT, "COMMANDCOUNT".getBytes(ENCODING))
+			.put(CommandType.COMMANDGETKEYS, "COMMANDGETKEYS".getBytes(ENCODING))
+			.put(CommandType.COMMANDINFO, "COMMANDINFO".getBytes(ENCODING))
+			.put(CommandType.CONFIGGET, "CONFIGGET".getBytes(ENCODING))
+			.put(CommandType.CONFIGRESETSTAT, "CONFIGRESETSTAT".getBytes(ENCODING))
+			.put(CommandType.CONFIGREWRITE, "CONFIGREWRITE".getBytes(ENCODING))
+			.put(CommandType.CONFIGSET, "CONFIGSET".getBytes(ENCODING))
 			.put(CommandType.DECR, "DECR".getBytes(ENCODING))
 			.put(CommandType.DECRBY, "DECRBY".getBytes(ENCODING))
 			.put(CommandType.DEL, "DEL".getBytes(ENCODING))
@@ -766,6 +921,7 @@ public class Redis2TextProtocol implements Protocol {
 			.put(CommandType.GETSET, "GETSET".getBytes(ENCODING))
 			.put(CommandType.INCR, "INCR".getBytes(ENCODING))
 			.put(CommandType.KEYS, "KEYS".getBytes(ENCODING))
+			.put(CommandType.LPOP, "LPOP".getBytes(ENCODING))
 			.put(CommandType.MULTI, "MULTI".getBytes(ENCODING))
 			.put(CommandType.PING, "PING".getBytes(ENCODING))
 			.put(CommandType.RENAME, "RENAME".getBytes(ENCODING))
