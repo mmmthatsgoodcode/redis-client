@@ -833,7 +833,6 @@ public class Redis2TextProtocol implements Protocol {
 				encode(command, out);
 			}
 		}
-
 	}
 	
 	public class Decoder implements Protocol.Decoder {
