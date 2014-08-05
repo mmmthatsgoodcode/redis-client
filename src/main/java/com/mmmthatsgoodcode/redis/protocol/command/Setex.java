@@ -12,5 +12,4 @@ public class Setex extends Set {
 	public int getExpiry() {
 		return expiry;
 	}
-
 }

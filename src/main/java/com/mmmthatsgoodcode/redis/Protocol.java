@@ -16,9 +16,10 @@ public interface Protocol {
 	public enum ReplyType { BULK, ERROR, INTEGER, MULTI_BULK, STATUS, UNKNOWN }
 	public enum CommandType { APPEND, AUTH, BGREWRITEAOF, BGSAVE, BITCOUNT, BITOP, BITPOS, BLPOP, BRPOP,
 							BRPOPLPUSH, CLIENTGETNAME, CLIENTLIST, COMMAND, COMMANDCOUNT,COMMANDGETKEYS,
-							COMMANDINFO, CONFIGGET, CONFIGRESETSTAT, CONFIGREWRITE, CONFIGSET, DECR, DECRBY,
-							DEL, DISCARD, DUMP, ECHO, EXEC, EXISTS, EXPIRE, EXPIREAT, GET, GETBIT, GETRANGE,
-							GETSET, INCR, KEYS, LPOP, MULTI, PING, RENAME, RENAMEX, ROLE, RPOP, RPOPLPUSH, RPUSH,
+							COMMANDINFO, CONFIGGET, CONFIGRESETSTAT, CONFIGREWRITE, CONFIGSET, DBSIZE, DECR,
+							DECRBY, DEL, DISCARD, DUMP, ECHO, EXEC, EXISTS, EXPIRE, EXPIREAT, FLUSHALL,
+							FLUSHDB, GET, GETBIT, GETRANGE, GETSET, HDEL, HEXISTS,HGET, HGETALL, HINCRBY,
+							HINCRBYFLOAT, HKEYS, HLEN, HMGET, HSET, HSETNX, HVALS, INCR, INCRBY, INCRBYFLOAT, INFO, KEYS, LPOP, MULTI, PING, RENAME, RENAMEX, ROLE, RPOP, RPOPLPUSH, RPUSH,
 							RPUSHX, SADD, SCARD, SDIFF, SDIFFSTORE, SELECT, SET, SETBIT, SETEX, SETNX,
 							SETRANGE, TIME, TTL, TYPE, WATCH
 							}
@@ -48,6 +49,7 @@ public interface Protocol {
 		public void encode(Configresetstat command, ByteBuf out);
 		public void encode(Configrewrite command, ByteBuf out);
 		public void encode(Configset command, ByteBuf out);
+		public void encode(Dbsize command, ByteBuf out);
 		public void encode(Decr command, ByteBuf out);
 		public void encode(Decrby command, ByteBuf out);
 		public void encode(Del command, ByteBuf out);
@@ -58,11 +60,28 @@ public interface Protocol {
 		public void encode(Exists command, ByteBuf out);
 		public void encode(Expire command, ByteBuf out);
 		public void encode(Expireat command, ByteBuf out);
+		public void encode(Flushall command, ByteBuf out);
+		public void encode(Flushdb command, ByteBuf out);
 		public void encode(Get command, ByteBuf out);
 		public void encode(Getbit command, ByteBuf out);
 		public void encode(Getrange command, ByteBuf out);
 		public void encode(Getset command, ByteBuf out);
+		public void encode(Hdel command, ByteBuf out);
+		public void encode(Hexists command, ByteBuf out);
+		public void encode(Hget command, ByteBuf out);
+		public void encode(Hgetall command, ByteBuf out);
+		public void encode(Hincrby command, ByteBuf out);
+		public void encode(Hincrbyfloat command, ByteBuf out);
+		public void encode(Hkeys command, ByteBuf out);
+		public void encode(Hlen command, ByteBuf out);
+		public void encode(Hmget command, ByteBuf out);
+		public void encode(Hset command, ByteBuf out);
+		public void encode(Hsetnx command, ByteBuf out);
+		public void encode(Hvals command, ByteBuf out);
 		public void encode(Incr command, ByteBuf out);
+		public void encode(Incrby command, ByteBuf out);
+		public void encode(Incrbyfloat command, ByteBuf out);
+		public void encode(Info command, ByteBuf out);
 		public void encode(Keys command, ByteBuf out);
 		public void encode(Lpop command, ByteBuf out);
 		public void encode(Multi command, ByteBuf out);

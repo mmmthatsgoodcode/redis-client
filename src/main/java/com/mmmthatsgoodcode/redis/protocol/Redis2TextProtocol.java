@@ -242,6 +242,11 @@ public class Redis2TextProtocol implements Protocol {
 		}
 
 		@Override
+		public void encode(Dbsize command, ByteBuf out) {
+			encodeNoArgCommand(out, commandNames.get(CommandType.DBSIZE));
+		}
+
+		@Override
 		public void encode(Decr command, ByteBuf out) {
 			EncodeHelper helper = new EncodeHelper(out);
 			helper.addArgc(2);
@@ -322,6 +327,16 @@ public class Redis2TextProtocol implements Protocol {
 		}
 
 		@Override
+		public void encode(Flushall command, ByteBuf out) {
+			encodeNoArgCommand(out, commandNames.get(CommandType.FLUSHALL));
+		}
+
+		@Override
+		public void encode(Flushdb command, ByteBuf out) {
+			encodeNoArgCommand(out, commandNames.get(CommandType.FLUSHDB));
+		}
+		
+		@Override
 		public void encode(Get command, ByteBuf out) {
 			EncodeHelper helper = new EncodeHelper(out);
 			helper.addArgc(2);
@@ -356,7 +371,121 @@ public class Redis2TextProtocol implements Protocol {
 			helper.addArg(command.getKey().getBytes(ENCODING));
 			helper.addArg(command.getValue());
 		}
-		
+
+		@Override
+		public void encode(Hdel command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(2+command.getFieldsList().size());
+			helper.addArg(commandNames.get(CommandType.HDEL));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			
+			for(byte[] field : command.getFieldsList()){
+				helper.addArg(field);
+			}
+		}
+
+		@Override
+		public void encode(Hexists command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(3);
+			helper.addArg(commandNames.get(CommandType.HEXISTS));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getField());
+		}
+
+		@Override
+		public void encode(Hget command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(3);
+			helper.addArg(commandNames.get(CommandType.HGET));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getField());
+		}
+
+		@Override
+		public void encode(Hgetall command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(2);
+			helper.addArg(commandNames.get(CommandType.HGETALL));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+		}
+
+		@Override
+		public void encode(Hincrby command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(4);
+			helper.addArg(commandNames.get(CommandType.HINCRBY));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getField());
+			helper.addArg(command.getIncrement());
+		}
+
+		@Override
+		public void encode(Hincrbyfloat command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(4);
+			helper.addArg(commandNames.get(CommandType.HINCRBYFLOAT));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getField());
+			helper.addArg(command.getIncrement());
+		}
+
+		@Override
+		public void encode(Hkeys command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(2);
+			helper.addArg(commandNames.get(CommandType.HKEYS));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+		}
+
+		@Override
+		public void encode(Hlen command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(2);
+			helper.addArg(commandNames.get(CommandType.HLEN));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+		}
+
+		@Override
+		public void encode(Hmget command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(2+command.getFieldList().size());
+			helper.addArg(commandNames.get(CommandType.HMGET));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			
+			for(byte[] field : command.getFieldList()){
+				helper.addArg(field);
+			}
+		}
+
+		@Override
+		public void encode(Hset command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(4);
+			helper.addArg(commandNames.get(CommandType.HSET));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getField());
+			helper.addArg(command.getValue());
+		}
+
+		@Override
+		public void encode(Hsetnx command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(4);
+			helper.addArg(commandNames.get(CommandType.HSETNX));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getField());
+			helper.addArg(command.getValue());
+		}
+
+		@Override
+		public void encode(Hvals command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(2);
+			helper.addArg(commandNames.get(CommandType.HVALS));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+		}
+
 		@Override
 		public void encode(Incr command, ByteBuf out) {
 			EncodeHelper helper = new EncodeHelper(out);
@@ -364,7 +493,33 @@ public class Redis2TextProtocol implements Protocol {
 			helper.addArg(commandNames.get(CommandType.INCR));
 			helper.addArg(command.getKey().getBytes(ENCODING));
 		}
-		
+
+		@Override
+		public void encode(Incrby command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(3);
+			helper.addArg(commandNames.get(CommandType.INCRBY));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getIncrement());
+		}
+
+		@Override
+		public void encode(Incrbyfloat command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(3);
+			helper.addArg(commandNames.get(CommandType.INCRBYFLOAT));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getIncrement());
+		}
+
+		@Override
+		public void encode(Info command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(2);
+			helper.addArg(commandNames.get(CommandType.INFO));
+			helper.addArg(command.getSection());
+		}
+
 		@Override
 		public void encode(Keys command, ByteBuf out) {
 			EncodeHelper helper = new EncodeHelper(out);
@@ -608,6 +763,7 @@ public class Redis2TextProtocol implements Protocol {
 			else if (command instanceof Configresetstat) encode((Configresetstat) command, out);
 			else if (command instanceof Configrewrite) encode((Configrewrite) command, out);
 			else if (command instanceof Configset) encode((Configset) command, out);
+			else if (command instanceof Dbsize) encode((Dbsize) command, out);
 			else if (command instanceof Decr) encode((Decr) command, out);
 			else if (command instanceof Decrby) encode((Decrby) command, out);
 			else if (command instanceof Del) encode((Del) command, out);
@@ -618,11 +774,28 @@ public class Redis2TextProtocol implements Protocol {
 			else if (command instanceof Exists) encode((Exists) command, out);
 			else if (command instanceof Expire) encode((Expire) command, out);
 			else if (command instanceof Expireat) encode((Expireat) command, out);
+			else if (command instanceof Flushall) encode((Flushall) command, out);
+			else if (command instanceof Flushdb) encode((Flushdb) command, out);
 			else if (command instanceof Get) encode((Get) command, out);
 			else if (command instanceof Getbit) encode((Getbit) command, out);
 			else if (command instanceof Getrange) encode((Getbit) command, out);
 			else if (command instanceof Getset) encode((Getset) command, out);
+			else if (command instanceof Hdel) encode((Hdel) command, out);
+			else if (command instanceof Hexists) encode((Hexists) command, out);
+			else if (command instanceof Hget) encode((Hget) command, out);
+			else if (command instanceof Hgetall) encode((Hgetall) command, out);
+			else if (command instanceof Hincrby) encode((Hincrby) command, out);
+			else if (command instanceof Hincrbyfloat) encode((Hincrbyfloat) command, out);
+			else if (command instanceof Hkeys) encode((Hkeys) command, out);
+			else if (command instanceof Hlen) encode((Hlen) command, out);
+			else if (command instanceof Hmget) encode((Hmget) command, out);
+			else if (command instanceof Hset) encode((Hset) command, out);
+			else if (command instanceof Hsetnx) encode((Hsetnx) command, out);
+			else if (command instanceof Hvals) encode((Hvals) command, out);
 			else if (command instanceof Incr) encode((Incr) command, out);
+			else if (command instanceof Incrby) encode((Incrby) command, out);
+			else if (command instanceof Incrbyfloat) encode((Incrbyfloat) command, out);
+			else if (command instanceof Info) encode((Info) command, out);
 			else if (command instanceof Keys) encode((Keys) command, out);
 			else if (command instanceof Lpop) encode((Lpop) command, out);
 			else if (command instanceof Lpop) encode((Lpop) command, out);
@@ -660,6 +833,7 @@ public class Redis2TextProtocol implements Protocol {
 				encode(command, out);
 			}
 		}
+
 	}
 	
 	public class Decoder implements Protocol.Decoder {
@@ -939,6 +1113,7 @@ public class Redis2TextProtocol implements Protocol {
 			.put(CommandType.CONFIGRESETSTAT, "CONFIG RESETSTAT".getBytes(ENCODING))
 			.put(CommandType.CONFIGREWRITE, "CONFIG REWRITE".getBytes(ENCODING))
 			.put(CommandType.CONFIGSET, "CONFIG SET".getBytes(ENCODING))
+			.put(CommandType.DBSIZE, "DBSIZE".getBytes(ENCODING))
 			.put(CommandType.DECR, "DECR".getBytes(ENCODING))
 			.put(CommandType.DECRBY, "DECRBY".getBytes(ENCODING))
 			.put(CommandType.DEL, "DEL".getBytes(ENCODING))
@@ -949,11 +1124,28 @@ public class Redis2TextProtocol implements Protocol {
 			.put(CommandType.EXISTS, "EXISTS".getBytes(ENCODING))
 			.put(CommandType.EXPIRE, "EXPIRE".getBytes(ENCODING))
 			.put(CommandType.EXPIREAT, "EXPIREAT".getBytes(ENCODING))
+			.put(CommandType.FLUSHALL, "FLUSHALL".getBytes(ENCODING))
+			.put(CommandType.FLUSHDB, "FLUSHDB".getBytes(ENCODING))
 			.put(CommandType.GET, "GET".getBytes(ENCODING))
 			.put(CommandType.GETBIT, "GETBIT".getBytes(ENCODING))
 			.put(CommandType.GETRANGE, "GETRANGE".getBytes(ENCODING))
 			.put(CommandType.GETSET, "GETSET".getBytes(ENCODING))
+			.put(CommandType.HDEL, "HDEL".getBytes(ENCODING))
+			.put(CommandType.HEXISTS, "HEXISTS".getBytes(ENCODING))
+			.put(CommandType.HGET, "HGET".getBytes(ENCODING))
+			.put(CommandType.HGETALL, "HGETALL".getBytes(ENCODING))
+			.put(CommandType.HINCRBY, "HINCRBY".getBytes(ENCODING))
+			.put(CommandType.HINCRBYFLOAT, "HINCRBYFLOAT".getBytes(ENCODING))
+			.put(CommandType.HKEYS, "HKEYS".getBytes(ENCODING))
+			.put(CommandType.HLEN, "HLEN".getBytes(ENCODING))
+			.put(CommandType.HMGET, "HMGET".getBytes(ENCODING))
+			.put(CommandType.HSET, "HSET".getBytes(ENCODING))
+			.put(CommandType.HSETNX, "HSETNX".getBytes(ENCODING))
+			.put(CommandType.HVALS, "HVALS".getBytes(ENCODING))
 			.put(CommandType.INCR, "INCR".getBytes(ENCODING))
+			.put(CommandType.INCRBY, "INCRBY".getBytes(ENCODING))
+			.put(CommandType.INCRBYFLOAT, "INCRBYFLOAT".getBytes(ENCODING))
+			.put(CommandType.INFO, "INFO".getBytes(ENCODING))
 			.put(CommandType.KEYS, "KEYS".getBytes(ENCODING))
 			.put(CommandType.LPOP, "LPOP".getBytes(ENCODING))
 			.put(CommandType.MULTI, "MULTI".getBytes(ENCODING))
