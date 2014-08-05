@@ -18,15 +18,21 @@ public class Bitop extends AbstractCommand<IntegerReply>{
 	
 	public Bitop(byte[] operation, byte[] destinationKey, byte[] key1) {
 		this.destinationKey = destinationKey;
-		this.keys = new ArrayList<byte[]>();
-		this.keys.add(key1);
+		List<byte[]> tmp = new ArrayList<byte[]>();
+		tmp.add(key1);
+		this.keys = tmp;
 		this.operation = operation;
 	}
 	
 	public Bitop(byte[] operation, byte[] destinationKey, byte[] key1, byte[]... keys) {
 		this.destinationKey = destinationKey;
-		this.keys = Arrays.asList(keys);
-		this.keys.add(key1);
+		
+		List<byte[]> tmp = new ArrayList<byte[]>();
+		tmp.add(key1);
+		for(byte[] key : keys){
+			tmp.add(key);
+		}
+		this.keys = tmp;
 		this.operation = operation;
 	}
 	
