@@ -9,13 +9,13 @@ import com.mmmthatsgoodcode.redis.protocol.reply.MultiBulkReply;
 
 public class Commandinfo extends AbstractCommand<MultiBulkReply>{
 
-	private final List<CommandType> commandList;
+	private final List<byte[]> commandList;
 	
-	public Commandinfo(CommandType... commands){
+	public Commandinfo(byte[]... commands){
 		commandList = Arrays.asList(commands);
 	}
 	
-	public List<CommandType> getCommandList() {
+	public List<byte[]> getCommandList() {
 		return commandList;
 	}
 }

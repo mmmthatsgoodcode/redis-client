@@ -4,5 +4,14 @@ import com.mmmthatsgoodcode.redis.protocol.model.AbstractCommand;
 import com.mmmthatsgoodcode.redis.protocol.reply.MultiBulkReply;
 
 public class Commandgetkeys extends AbstractCommand<MultiBulkReply>{
-	//TODO should be followed by a command. should we give one as param?
+	
+	private final com.mmmthatsgoodcode.redis.protocol.Command command;
+	
+	public Commandgetkeys(com.mmmthatsgoodcode.redis.protocol.Command command){
+		this.command = command;
+	}
+	
+	public com.mmmthatsgoodcode.redis.protocol.Command getCommand() {
+		return command;
+	}
 }

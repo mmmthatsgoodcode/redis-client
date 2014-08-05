@@ -125,86 +125,120 @@ public class Redis2TextProtocol implements Protocol {
 
 		@Override
 		public void encode(Bitpos command, ByteBuf out) {
-			// TODO Auto-generated method stub
-			
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(5);
+			helper.addArg(commandNames.get(CommandType.BITPOS));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getBitSearched());
+			helper.addArg(command.getStartingBit());
+			helper.addArg(command.getEndingBit());
 		}
 
 		@Override
 		public void encode(Blpop command, ByteBuf out) {
-			// TODO Auto-generated method stub
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(3+command.getKeys().size());
+			helper.addArg(commandNames.get(CommandType.BLPOP));
+			helper.addArg(command.getKey().getBytes(ENCODING));
 			
+			for(String key: command.getKeys()){
+				helper.addArg(key.getBytes(ENCODING));
+			}
+			helper.addArg(command.getTimeout());
 		}
 
 		@Override
 		public void encode(Brpop command, ByteBuf out) {
-			// TODO Auto-generated method stub
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(3+command.getKeys().size());
+			helper.addArg(commandNames.get(CommandType.BRPOP));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			
+			for(String key: command.getKeys()){
+				helper.addArg(key.getBytes(ENCODING));
+			}
+			helper.addArg(command.getTimeout());
 			
 		}
 
 		@Override
 		public void encode(Brpoplpush command, ByteBuf out) {
-			// TODO Auto-generated method stub
-			
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(3);
+			helper.addArg(commandNames.get(CommandType.BRPOPLPUSH));
+			helper.addArg(command.getSource());
+			helper.addArg(command.getDestination());
+			helper.addArg(command.getTimeout());
 		}
 
 		@Override
 		public void encode(Clientgetname command, ByteBuf out) {
-			// TODO Auto-generated method stub
-			
+			encodeNoArgCommand(out, commandNames.get(CommandType.CLIENTGETNAME));
 		}
 
 		@Override
 		public void encode(Clientlist command, ByteBuf out) {
-			// TODO Auto-generated method stub
-			
+			encodeNoArgCommand(out, commandNames.get(CommandType.CLIENTLIST));
 		}
 
 		@Override
 		public void encode(com.mmmthatsgoodcode.redis.protocol.command.Command command, ByteBuf out) {
-			// TODO Auto-generated method stub
-			
+			encodeNoArgCommand(out, commandNames.get(CommandType.COMMAND));
 		}
 
 		@Override
 		public void encode(Commandcount command, ByteBuf out) {
-			// TODO Auto-generated method stub
-			
+			encodeNoArgCommand(out, commandNames.get(CommandType.COMMANDCOUNT));
 		}
 
 		@Override
 		public void encode(Commandgetkeys command, ByteBuf out) {
-			// TODO Auto-generated method stub
-			
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(2);
+			helper.addArg(commandNames.get(CommandType.COMMANDGETKEYS));
+			try {
+				encode(command.getCommand(), out);
+			} catch (OperationNotSupportedException e) {
+				e.printStackTrace();
+			}
 		}
 
 		@Override
 		public void encode(Commandinfo command, ByteBuf out) {
-			// TODO Auto-generated method stub
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(1+command.getCommandList().size());
+			helper.addArg(commandNames.get(CommandType.COMMANDINFO));
 			
+			for(byte[] commandName : command.getCommandList()){
+				helper.addArg(commandName);
+			}
 		}
 
 		@Override
 		public void encode(Configget command, ByteBuf out) {
-			// TODO Auto-generated method stub
-			
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(2);
+			helper.addArg(commandNames.get(CommandType.CONFIGGET));
+			helper.addArg(command.getParameter());
 		}
 
 		@Override
 		public void encode(Configresetstat command, ByteBuf out) {
-			// TODO Auto-generated method stub
-			
+			encodeNoArgCommand(out, commandNames.get(CommandType.CONFIGRESETSTAT));
 		}
 
 		@Override
 		public void encode(Configrewrite command, ByteBuf out) {
-			// TODO Auto-generated method stub
-			
+			encodeNoArgCommand(out, commandNames.get(CommandType.CONFIGREWRITE));
 		}
 
 		@Override
 		public void encode(Configset command, ByteBuf out) {
-			// TODO Auto-generated method stub
-			
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(3);
+			helper.addArg(commandNames.get(CommandType.CONFIGSET));
+			helper.addArg(command.getParameter());
+			helper.addArg(command.getValue());
 		}
 
 		@Override
@@ -895,16 +929,16 @@ public class Redis2TextProtocol implements Protocol {
 			.put(CommandType.BLPOP, "BLPOP".getBytes(ENCODING))
 			.put(CommandType.BRPOP, "BRPOP".getBytes(ENCODING))
 			.put(CommandType.BRPOPLPUSH, "BRPOPLPUSH".getBytes(ENCODING))
-			.put(CommandType.CLIENTGETNAME, "CLIENTGETNAME".getBytes(ENCODING))
-			.put(CommandType.CLIENTLIST, "CLIENTLIST".getBytes(ENCODING))
+			.put(CommandType.CLIENTGETNAME, "CLIENT GETNAME".getBytes(ENCODING))
+			.put(CommandType.CLIENTLIST, "CLIENT LIST".getBytes(ENCODING))
 			.put(CommandType.COMMAND, "COMMAND".getBytes(ENCODING))
-			.put(CommandType.COMMANDCOUNT, "COMMANDCOUNT".getBytes(ENCODING))
-			.put(CommandType.COMMANDGETKEYS, "COMMANDGETKEYS".getBytes(ENCODING))
-			.put(CommandType.COMMANDINFO, "COMMANDINFO".getBytes(ENCODING))
-			.put(CommandType.CONFIGGET, "CONFIGGET".getBytes(ENCODING))
-			.put(CommandType.CONFIGRESETSTAT, "CONFIGRESETSTAT".getBytes(ENCODING))
-			.put(CommandType.CONFIGREWRITE, "CONFIGREWRITE".getBytes(ENCODING))
-			.put(CommandType.CONFIGSET, "CONFIGSET".getBytes(ENCODING))
+			.put(CommandType.COMMANDCOUNT, "COMMAND COUNT".getBytes(ENCODING))
+			.put(CommandType.COMMANDGETKEYS, "COMMAND GETKEYS".getBytes(ENCODING))
+			.put(CommandType.COMMANDINFO, "COMMAND INFO".getBytes(ENCODING))
+			.put(CommandType.CONFIGGET, "CONFIG GET".getBytes(ENCODING))
+			.put(CommandType.CONFIGRESETSTAT, "CONFIG RESETSTAT".getBytes(ENCODING))
+			.put(CommandType.CONFIGREWRITE, "CONFIG REWRITE".getBytes(ENCODING))
+			.put(CommandType.CONFIGSET, "CONFIG SET".getBytes(ENCODING))
 			.put(CommandType.DECR, "DECR".getBytes(ENCODING))
 			.put(CommandType.DECRBY, "DECRBY".getBytes(ENCODING))
 			.put(CommandType.DEL, "DEL".getBytes(ENCODING))

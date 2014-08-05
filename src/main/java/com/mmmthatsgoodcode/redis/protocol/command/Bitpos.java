@@ -1,21 +1,45 @@
 package com.mmmthatsgoodcode.redis.protocol.command;
 
-import java.util.Arrays;
-import java.util.List;
-
+import com.mmmthatsgoodcode.redis.protocol.Redis2TextProtocol;
 import com.mmmthatsgoodcode.redis.protocol.model.KeyedCommand;
 import com.mmmthatsgoodcode.redis.protocol.reply.IntegerReply;
 
 public class Bitpos extends KeyedCommand<IntegerReply>{
 
-	private final List<byte[]> bits;
+	private final byte[] startingBit;
+	private final byte[] endingBit;
+	private final byte[] bitSearched;
 	
-	public Bitpos(String key, byte[]... bits) {
+	public Bitpos(String key, byte[] bitSearched) {
 		super(key);
-		this.bits = Arrays.asList(bits);
+		this.bitSearched = bitSearched;
+		this.startingBit = "0".getBytes(Redis2TextProtocol.ENCODING);
+		this.endingBit = "-1".getBytes(Redis2TextProtocol.ENCODING);
 	}
 	
-	public List<byte[]> getBits() {
-		return bits;
+	public Bitpos(String key, byte[] bitSearched, byte[] startingBit) {
+		super(key);
+		this.bitSearched = bitSearched;
+		this.startingBit = startingBit;
+		this.endingBit = "-1".getBytes(Redis2TextProtocol.ENCODING);
+	}
+	
+	public Bitpos(String key, byte[] bitSearched, byte[] startingBit, byte[] endingBit) {
+		super(key);
+		this.bitSearched = bitSearched;
+		this.startingBit = startingBit;
+		this.endingBit = endingBit;
+	}
+	
+	public byte[] getBitSearched() {
+		return bitSearched;
+	}
+	
+	public byte[] getStartingBit() {
+		return startingBit;
+	}
+	
+	public byte[] getEndingBit() {
+		return endingBit;
 	}
 }
