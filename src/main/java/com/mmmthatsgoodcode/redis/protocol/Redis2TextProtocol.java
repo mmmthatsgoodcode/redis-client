@@ -529,13 +529,128 @@ public class Redis2TextProtocol implements Protocol {
 		}
 
 		@Override
+		public void encode(Lastsave command, ByteBuf out) {
+			encodeNoArgCommand(out, commandNames.get(CommandType.LASTSAVE));
+		}
+
+		@Override
+		public void encode(Lindex command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(3);
+			helper.addArg(commandNames.get(CommandType.LINDEX));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getIndex());
+		}
+
+		@Override
+		public void encode(Linsert command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(5);
+			helper.addArg(commandNames.get(CommandType.LINSERT));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getPosition());
+			helper.addArg(command.getPivot());
+			helper.addArg(command.getValue());
+		}
+
+		@Override
+		public void encode(Llen command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(2);
+			helper.addArg(commandNames.get(CommandType.LLEN));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+		}
+
+		@Override
 		public void encode(Lpop command, ByteBuf out) {
 			EncodeHelper helper = new EncodeHelper(out);
 			helper.addArgc(2);
 			helper.addArg(commandNames.get(CommandType.LPOP));
 			helper.addArg(command.getKey().getBytes(ENCODING));
 		}
-		
+
+		@Override
+		public void encode(Lpush command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(2+command.getValuesList().size());
+			helper.addArg(commandNames.get(CommandType.LPUSH));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			
+			for(byte[] value : command.getValuesList()){
+				helper.addArg(value);
+			}
+		}
+
+		@Override
+		public void encode(Lpushx command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(3);
+			helper.addArg(commandNames.get(CommandType.LPUSHX));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getValue());
+			
+		}
+
+		@Override
+		public void encode(Lrange command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(4);
+			helper.addArg(commandNames.get(CommandType.LRANGE));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getStart());
+			helper.addArg(command.getStop());
+		}
+
+		@Override
+		public void encode(Lrem command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(4);
+			helper.addArg(commandNames.get(CommandType.LREM));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getCount());
+			helper.addArg(command.getValue());
+		}
+
+		@Override
+		public void encode(Lset command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(4);
+			helper.addArg(commandNames.get(CommandType.LSET));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getIndex());
+			helper.addArg(command.getValue());
+		}
+
+		@Override
+		public void encode(Ltrim command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(4);
+			helper.addArg(commandNames.get(CommandType.LTRIM));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getStart());
+			helper.addArg(command.getStop());
+		}
+
+		@Override
+		public void encode(Mget command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(1+command.getKeyList().size());
+			helper.addArg(commandNames.get(CommandType.MGET));
+			
+			for(String key : command.getKeyList()){
+				helper.addArg(key.getBytes(ENCODING));				
+			}
+		}
+
+		@Override
+		public void encode(Move command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(3);
+			helper.addArg(commandNames.get(CommandType.MOVE));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getDb());
+		}
+	
 		@Override
 		public void encode(Multi command, ByteBuf out) {
 			encodeNoArgCommand(out, commandNames.get(CommandType.MULTI));
@@ -797,8 +912,19 @@ public class Redis2TextProtocol implements Protocol {
 			else if (command instanceof Incrbyfloat) encode((Incrbyfloat) command, out);
 			else if (command instanceof Info) encode((Info) command, out);
 			else if (command instanceof Keys) encode((Keys) command, out);
+			else if (command instanceof Lastsave) encode((Lastsave) command, out);
+			else if (command instanceof Lindex) encode((Lindex) command, out);
+			else if (command instanceof Linsert) encode((Linsert) command, out);
+			else if (command instanceof Llen) encode((Llen) command, out);
 			else if (command instanceof Lpop) encode((Lpop) command, out);
-			else if (command instanceof Lpop) encode((Lpop) command, out);
+			else if (command instanceof Lpush) encode((Lpush) command, out);
+			else if (command instanceof Lpushx) encode((Lpushx) command, out);
+			else if (command instanceof Lrange) encode((Lrange) command, out);
+			else if (command instanceof Lrem) encode((Lrem) command, out);
+			else if (command instanceof Lset) encode((Lset) command, out);
+			else if (command instanceof Ltrim) encode((Ltrim) command, out);
+			else if (command instanceof Mget) encode((Mget) command, out);
+			else if (command instanceof Move) encode((Move) command, out);
 			else if (command instanceof Multi) encode((Multi) command, out);
 			else if (command instanceof Ping) encode((Ping) command, out);
 			else if (command instanceof Rename) encode((Rename) command, out);
@@ -834,7 +960,7 @@ public class Redis2TextProtocol implements Protocol {
 			}
 		}
 	}
-	
+
 	public class Decoder implements Protocol.Decoder {
 
 		private ReplyType currentReplyType = null; // stores the result of infer() for this decoder
@@ -1146,7 +1272,19 @@ public class Redis2TextProtocol implements Protocol {
 			.put(CommandType.INCRBYFLOAT, "INCRBYFLOAT".getBytes(ENCODING))
 			.put(CommandType.INFO, "INFO".getBytes(ENCODING))
 			.put(CommandType.KEYS, "KEYS".getBytes(ENCODING))
+			.put(CommandType.LASTSAVE, "LASTSAVE".getBytes(ENCODING))
+			.put(CommandType.LINDEX, "LINDEX".getBytes(ENCODING))
+			.put(CommandType.LINSERT, "LINSERT".getBytes(ENCODING))
+			.put(CommandType.LLEN, "LLEN".getBytes(ENCODING))
 			.put(CommandType.LPOP, "LPOP".getBytes(ENCODING))
+			.put(CommandType.LPUSH, "LPUSH".getBytes(ENCODING))
+			.put(CommandType.LPUSHX, "LPUSHX".getBytes(ENCODING))
+			.put(CommandType.LRANGE, "LRANGE".getBytes(ENCODING))
+			.put(CommandType.LREM, "LREM".getBytes(ENCODING))
+			.put(CommandType.LSET, "LSET".getBytes(ENCODING))
+			.put(CommandType.LTRIM, "LTRIM".getBytes(ENCODING))
+			.put(CommandType.MGET, "MGET".getBytes(ENCODING))
+			.put(CommandType.MOVE, "MOVE".getBytes(ENCODING))
 			.put(CommandType.MULTI, "MULTI".getBytes(ENCODING))
 			.put(CommandType.PING, "PING".getBytes(ENCODING))
 			.put(CommandType.RENAME, "RENAME".getBytes(ENCODING))

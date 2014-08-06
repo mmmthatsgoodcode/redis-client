@@ -19,7 +19,7 @@ public interface Protocol {
 							COMMANDINFO, CONFIGGET, CONFIGRESETSTAT, CONFIGREWRITE, CONFIGSET, DBSIZE, DECR,
 							DECRBY, DEL, DISCARD, DUMP, ECHO, EXEC, EXISTS, EXPIRE, EXPIREAT, FLUSHALL,
 							FLUSHDB, GET, GETBIT, GETRANGE, GETSET, HDEL, HEXISTS,HGET, HGETALL, HINCRBY,
-							HINCRBYFLOAT, HKEYS, HLEN, HMGET, HSET, HSETNX, HVALS, INCR, INCRBY, INCRBYFLOAT, INFO, KEYS, LPOP, MULTI, PING, RENAME, RENAMEX, ROLE, RPOP, RPOPLPUSH, RPUSH,
+							HINCRBYFLOAT, HKEYS, HLEN, HMGET, HSET, HSETNX, HVALS, INCR, INCRBY, INCRBYFLOAT, INFO, KEYS, LASTSAVE, LINDEX, LINSERT, LLEN, LPOP, LPUSH, LPUSHX, LRANGE, LREM, LSET, LTRIM, MGET, MOVE, MULTI, PING, RENAME, RENAMEX, ROLE, RPOP, RPOPLPUSH, RPUSH,
 							RPUSHX, SADD, SCARD, SDIFF, SDIFFSTORE, SELECT, SET, SETBIT, SETEX, SETNX,
 							SETRANGE, TIME, TTL, TYPE, WATCH
 							}
@@ -83,7 +83,19 @@ public interface Protocol {
 		public void encode(Incrbyfloat command, ByteBuf out);
 		public void encode(Info command, ByteBuf out);
 		public void encode(Keys command, ByteBuf out);
+		public void encode(Lastsave command, ByteBuf out);
+		public void encode(Lindex command, ByteBuf out);
+		public void encode(Linsert command, ByteBuf out);
+		public void encode(Llen command, ByteBuf out);
 		public void encode(Lpop command, ByteBuf out);
+		public void encode(Lpush command, ByteBuf out);
+		public void encode(Lpushx command, ByteBuf out);
+		public void encode(Lrange command, ByteBuf out);
+		public void encode(Lrem command, ByteBuf out);
+		public void encode(Lset command, ByteBuf out);
+		public void encode(Ltrim command, ByteBuf out);
+		public void encode(Mget command, ByteBuf out);
+		public void encode(Move command, ByteBuf out);
 		public void encode(Multi command, ByteBuf out);
 		public void encode(Ping command, ByteBuf out);
 		public void encode(Rename command, ByteBuf out);
