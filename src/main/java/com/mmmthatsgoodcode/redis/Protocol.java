@@ -14,14 +14,17 @@ import io.netty.buffer.ByteBufAllocator;
 public interface Protocol {
 	
 	public enum ReplyType { BULK, ERROR, INTEGER, MULTI_BULK, STATUS, UNKNOWN }
-	public enum CommandType { APPEND, AUTH, BGREWRITEAOF, BGSAVE, BITCOUNT, BITOP, BITPOS, BLPOP, BRPOP,
-							BRPOPLPUSH, CLIENTGETNAME, CLIENTLIST, COMMAND, COMMANDCOUNT,COMMANDGETKEYS,
-							COMMANDINFO, CONFIGGET, CONFIGRESETSTAT, CONFIGREWRITE, CONFIGSET, DBSIZE, DECR,
-							DECRBY, DEL, DISCARD, DUMP, ECHO, EXEC, EXISTS, EXPIRE, EXPIREAT, FLUSHALL,
-							FLUSHDB, GET, GETBIT, GETRANGE, GETSET, HDEL, HEXISTS,HGET, HGETALL, HINCRBY,
-							HINCRBYFLOAT, HKEYS, HLEN, HMGET, HSET, HSETNX, HVALS, INCR, INCRBY, INCRBYFLOAT, INFO, KEYS, LASTSAVE, LINDEX, LINSERT, LLEN, LPOP, LPUSH, LPUSHX, LRANGE, LREM, LSET, LTRIM, MGET, MOVE, MULTI, PING, RENAME, RENAMEX, ROLE, RPOP, RPOPLPUSH, RPUSH,
-							RPUSHX, SADD, SCARD, SDIFF, SDIFFSTORE, SELECT, SET, SETBIT, SETEX, SETNX,
-							SETRANGE, TIME, TTL, TYPE, WATCH
+	public enum CommandType { APPEND, AUTH, BGREWRITEAOF, BGSAVE, BITCOUNT, BITOP, BITPOS, BLPOP, BRPOP, BRPOPLPUSH,
+							CLIENTGETNAME, CLIENTLIST, COMMAND, COMMANDCOUNT,COMMANDGETKEYS, COMMANDINFO, CONFIGGET,
+							CONFIGRESETSTAT, CONFIGREWRITE, CONFIGSET, DBSIZE, DECR, DECRBY, DEL, DISCARD, DUMP, ECHO,
+							EXEC, EXISTS, EXPIRE, EXPIREAT, FLUSHALL, FLUSHDB, GET, GETBIT, GETRANGE, GETSET, HDEL,
+							HEXISTS, HGET, HGETALL, HINCRBY, HINCRBYFLOAT, HKEYS, HLEN, HMGET, HSET, HSETNX, HVALS,
+							INCR, INCRBY, INCRBYFLOAT, INFO, KEYS, LASTSAVE, LINDEX, LINSERT, LLEN, LPOP, LPUSH,
+							LPUSHX, LRANGE, LREM, LSET, LTRIM, MGET, MONITOR, MOVE, MULTI, PERSIST, PEXPIRE, PEXPIREAT, PING,
+							PSETEX, PTTL, QUIT, RANDOMKEY, RENAME, RENAMEX, ROLE, RPOP, RPOPLPUSH, RPUSH, RPUSHX, SADD,
+							SAVE, SCARD, SCRIPTFLUSH, SCRIPTKILL, SDIFF, SDIFFSTORE, SELECT, SET, SETBIT, SETEX, SETNX,
+							SETRANGE, SHUTDOWN, SINTER, SINTERSTORE, SISMEMBER, SMEMBERS, SMOVE, SPOP, SRANDMEMBER,
+							SREM, STRLEN, SYNC, TIME, TTL, TYPE, UNWATCH, WATCH
 							}
 	
 	public ByteBufAllocator getByteBufAllocator();
@@ -96,8 +99,15 @@ public interface Protocol {
 		public void encode(Ltrim command, ByteBuf out);
 		public void encode(Mget command, ByteBuf out);
 		public void encode(Move command, ByteBuf out);
-		public void encode(Multi command, ByteBuf out);
+		public void encode(Multi command, ByteBuf out);		
+		public void encode(Persist command, ByteBuf out);
+		public void encode(Pexpire command, ByteBuf out);
+		public void encode(Pexpireat command, ByteBuf out);
 		public void encode(Ping command, ByteBuf out);
+		public void encode(Psetex command, ByteBuf out);
+		public void encode(Pttl command, ByteBuf out);
+		public void encode(Quit command, ByteBuf out);
+		public void encode(Randomkey command, ByteBuf out);
 		public void encode(Rename command, ByteBuf out);
 		public void encode(Renamex command, ByteBuf out);
 		public void encode(Role command, ByteBuf out);
@@ -106,7 +116,10 @@ public interface Protocol {
 		public void encode(Rpush command, ByteBuf out);
 		public void encode(Rpushx command, ByteBuf out);
 		public void encode(Sadd command, ByteBuf out);
+		public void encode(Save command, ByteBuf out);
 		public void encode(Scard command, ByteBuf out);
+		public void encode(Scriptflush command, ByteBuf out);
+		public void encode(Scriptkill command, ByteBuf out);
 		public void encode(Sdiff command, ByteBuf out);
 		public void encode(Sdiffstore command, ByteBuf out);
 		public void encode(Select command, ByteBuf out);
@@ -115,9 +128,21 @@ public interface Protocol {
 		public void encode(Setex command, ByteBuf out);
 		public void encode(Setnx command, ByteBuf out);
 		public void encode(Setrange command, ByteBuf out);
+		public void encode(Shutdown command, ByteBuf out);
+		public void encode(Sinter command, ByteBuf out);
+		public void encode(Sinterstore command, ByteBuf out);
+		public void encode(Sismember command, ByteBuf out);
+		public void encode(Smembers command, ByteBuf out);
+		public void encode(Smove command, ByteBuf out);
+		public void encode(Spop command, ByteBuf out);
+		public void encode(Srandmember command, ByteBuf out);
+		public void encode(Srem command, ByteBuf out);
+		public void encode(Strlen command, ByteBuf out);
+		//public void encode(Sync command, ByteBuf out);
 		public void encode(Time command, ByteBuf out);
 		public void encode(Ttl command, ByteBuf out);
 		public void encode(Type command, ByteBuf out);
+		public void encode(Unwatch command, ByteBuf out);
 		public void encode(Watch command, ByteBuf out);
 		public void encode(com.mmmthatsgoodcode.redis.protocol.Command command, ByteBuf out) throws OperationNotSupportedException;		
 		public void encode(Transaction command, ByteBuf out) throws OperationNotSupportedException;
