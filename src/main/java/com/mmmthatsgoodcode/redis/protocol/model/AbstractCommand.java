@@ -10,7 +10,7 @@ import com.mmmthatsgoodcode.redis.protocol.Reply;
 
 public abstract class AbstractCommand<T extends Reply> implements Command<T> {
 	
-	protected final PendingReply<T> reply = new PendingReply<T>(this);
+	protected PendingReply<T> reply = new PendingReply<T>(this);
 
 	
 	/* (non-Javadoc)
