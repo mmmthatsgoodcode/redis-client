@@ -10,8 +10,10 @@ import com.mmmthatsgoodcode.redis.client.Transaction;
 import com.mmmthatsgoodcode.redis.protocol.Command;
 import com.mmmthatsgoodcode.redis.protocol.Reply;
 import com.mmmthatsgoodcode.redis.protocol.model.KeyedCommand;
+import com.mmmthatsgoodcode.redis.protocol.model.MultiKeyedCommand;
 import com.mmmthatsgoodcode.redis.protocol.model.PendingReply;
 import com.mmmthatsgoodcode.redis.protocol.model.PinnedCommand;
+import com.mmmthatsgoodcode.redis.protocol.model.SplittableCommand;
 import com.mmmthatsgoodcode.redis.protocol.reply.MultiBulkReply;
 
 public interface Client {
@@ -33,8 +35,12 @@ public interface Client {
 			PinnedCommand<T> pinnedCommand)
 			throws NoConnectionsAvailableException;
 
+	public abstract <C extends MultiKeyedCommand, T extends Reply> PendingReply<T> send(SplittableCommand<C, T> command)
+			throws NoConnectionsAvailableException;
+
 	public abstract <T extends Reply> PendingReply<T> send(Command<T> command)
 			throws NoConnectionsAvailableException;
+	
 
 	public abstract Host hostForKey(String key);
 

@@ -7,9 +7,13 @@ import io.netty.channel.nio.NioEventLoopGroup;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -37,8 +41,10 @@ import com.mmmthatsgoodcode.redis.protocol.Redis2TextProtocol;
 import com.mmmthatsgoodcode.redis.protocol.Reply;
 import com.mmmthatsgoodcode.redis.protocol.command.Exec;
 import com.mmmthatsgoodcode.redis.protocol.model.KeyedCommand;
+import com.mmmthatsgoodcode.redis.protocol.model.MultiKeyedCommand;
 import com.mmmthatsgoodcode.redis.protocol.model.PendingReply;
 import com.mmmthatsgoodcode.redis.protocol.model.PinnedCommand;
+import com.mmmthatsgoodcode.redis.protocol.model.SplittableCommand;
 import com.mmmthatsgoodcode.redis.protocol.reply.MultiBulkReply;
 
 public class RedisClient implements Client {
@@ -257,6 +263,41 @@ public class RedisClient implements Client {
 		
 	}
 	
+	@Override
+	public <C extends MultiKeyedCommand, T extends Reply> PendingReply<T> send( SplittableCommand<C, T> command) throws NoConnectionsAvailableException {
+		
+		if (this.shouldHash()) {
+			
+			Map<Host, Set<String>> hashedKeys = new HashMap<Host, Set<String>>();
+			// get all keys of this SplittableCommand, hash them to their respective hosts
+			for(String key:command.getKeys()) {
+				
+				Host host = hostForKey(key);
+				if (hashedKeys.containsKey(host) == false) hashedKeys.put(host, new HashSet<String>());
+				hashedKeys.get(host).add(key);
+				
+			}
+			
+			CountDownLatch doneSignal = new CountDownLatch(hashedKeys.size());
+			
+			// split by host
+			for(Entry<Host, Set<String>> keysForHost:hashedKeys.entrySet()) {
+				
+				MultiKeyedCommand splitCommand = command.split(keysForHost.getValue());
+				
+				// XXX here, you should send the adresse of Donesignal to the splitCommand, so that it can use doneSignal.countDown() when he has finished working
+				
+				
+				keysForHost.getKey().send(splitCommand);// XXX which function does it uses? which send.
+				
+				
+				// Will that work while multiplexing? 
+			}
+			
+		}
+		return null;
+	}
+	
 	/* (non-Javadoc)
 	 * @see com.mmmthatsgoodcode.redis.Client#send(com.mmmthatsgoodcode.redis.protocol.Command)
 	 */
@@ -324,5 +365,7 @@ public class RedisClient implements Client {
 	public EventLoopGroup getEventLoopGroup() {
 		return this.eventLoopGroup;
 	}
+
+
 	
 }
