@@ -23,7 +23,7 @@ import com.mmmthatsgoodcode.redis.client.Transaction;
 import com.mmmthatsgoodcode.redis.client.UnrecognizedReplyException;
 import com.mmmthatsgoodcode.redis.protocol.Command;
 import com.mmmthatsgoodcode.redis.protocol.command.*;
-import com.mmmthatsgoodcode.redis.protocol.command.Shutdown;
+import com.mmmthatsgoodcode.redis.protocol.model.AbstractReply;
 import com.mmmthatsgoodcode.redis.protocol.model.AbstractReply.ReplyHintBytes;
 import com.mmmthatsgoodcode.redis.protocol.reply.BulkReply;
 import com.mmmthatsgoodcode.redis.protocol.reply.ErrorReply;
@@ -668,14 +668,14 @@ public class Redis2TextProtocol implements Protocol {
 		}
 
 		@Override
-		public void encode(Mset command, ByteBuf out) {
+		public void encode(MSet command, ByteBuf out) {
 			EncodeHelper helper = new EncodeHelper(out);
-			helper.addArgc(1+2*command.getKeyValueMap().size());
+			helper.addArgc(1+2*command.getKeysValues().size());
 			helper.addArg(commandNames.get(CommandType.MSET));
 			
-			for(Entry<String, String> keyvalue : command.getKeyValueMap().entrySet()){
+			for(Entry<String, byte[]> keyvalue : command.getKeysValues().entrySet()){
 				helper.addArg(keyvalue.getKey().getBytes(ENCODING));
-				helper.addArg(keyvalue.getValue().getBytes(ENCODING));
+				helper.addArg(keyvalue.getValue());
 			}
 		}
 
@@ -1201,7 +1201,7 @@ public class Redis2TextProtocol implements Protocol {
 			else if (command instanceof Mget) encode((Mget) command, out);
 			//else if (command instanceof Monitor) encode((Monitor) command, out);
 			else if (command instanceof Move) encode((Move) command, out);
-			else if (command instanceof Mset) encode((Mset) command, out);
+			else if (command instanceof MSet) encode((MSet) command, out);
 			else if (command instanceof Msetnx) encode((Msetnx) command, out);
 			else if (command instanceof Multi) encode((Multi) command, out);
 			else if (command instanceof Persist) encode((Persist) command, out);

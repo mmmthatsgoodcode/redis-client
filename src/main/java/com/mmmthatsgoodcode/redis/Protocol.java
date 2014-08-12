@@ -100,7 +100,7 @@ public interface Protocol {
 		public void encode(Ltrim command, ByteBuf out);
 		public void encode(Mget command, ByteBuf out);
 		public void encode(Move command, ByteBuf out);
-		public void encode(Mset command, ByteBuf out);
+		public void encode(MSet command, ByteBuf out);
 		public void encode(Msetnx command, ByteBuf out);
 		public void encode(Multi command, ByteBuf out);		
 		public void encode(Persist command, ByteBuf out);

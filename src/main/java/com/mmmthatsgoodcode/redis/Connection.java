@@ -100,20 +100,19 @@ public class Connection  {
 	 * @throws InterruptedException 
 	 */
 	public <T extends Reply> PendingReply<T> send(final Command<T> command) {
-	
+		LOG.debug("Connection.send()");
 		if (getState() == State.CONNECTED) {
-			
 			channel.writeAndFlush(command).addListener(new ChannelFutureListener() {
 				
 				@Override
 				public void operationComplete(ChannelFuture future) throws Exception {
+					LOG.debug("Operation Complete");
 					command.getReply().sent(future);
 				}
 				
 			});
 			
 		}
-		
 		return command.getReply();
 		
 	}

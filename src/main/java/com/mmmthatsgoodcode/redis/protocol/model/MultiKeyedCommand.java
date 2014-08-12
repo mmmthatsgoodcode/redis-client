@@ -1,22 +1,24 @@
 package com.mmmthatsgoodcode.redis.protocol.model;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.CountDownLatch;
 
 import com.mmmthatsgoodcode.redis.protocol.Reply;
 
 public abstract class MultiKeyedCommand<T extends Reply> extends AbstractCommand<T>{
 
-	protected final Set<String> keys = new HashSet<String> ();
+	protected final List<String> keys = new ArrayList<String> ();
 	
-	public MultiKeyedCommand(String key, String... keys) {
-		this.keys.add(key);
-		this.keys.addAll(Arrays.asList(keys));
+	public MultiKeyedCommand(Map<String, byte[]> keys) {
+		for(Entry<String, byte[]> keySet : keys.entrySet()){
+			this.keys.add(keySet.getKey());
+		}
 	}
 	
-	public Set<String> getKeys() {
+	public List<String> getKeys() {
 		return keys;
 	}
 }

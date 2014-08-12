@@ -126,7 +126,6 @@ public class Host {
 		}
 		
 		Connection selectedConnection = getAvailbleConnection();
-	
 		LOG.debug("Selected connection {}", selectedConnection);
 		return selectedConnection.send(command);
 		
