@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
@@ -40,6 +41,7 @@ import com.mmmthatsgoodcode.redis.protocol.Command;
 import com.mmmthatsgoodcode.redis.protocol.Redis2TextProtocol;
 import com.mmmthatsgoodcode.redis.protocol.Reply;
 import com.mmmthatsgoodcode.redis.protocol.command.Exec;
+import com.mmmthatsgoodcode.redis.protocol.command.MSet;
 import com.mmmthatsgoodcode.redis.protocol.model.KeyedCommand;
 import com.mmmthatsgoodcode.redis.protocol.model.MultiKeyedCommand;
 import com.mmmthatsgoodcode.redis.protocol.model.PendingReply;
@@ -213,6 +215,7 @@ public class RedisClient implements Client {
 		if (hosts.size() == 0) throw new IllegalStateException("No Hosts to connect to!");
 		for(Host host:hosts) {
 			host.connect();
+			LOG.debug("Connected to host {} at port {}", host.getHostInfo().getHostname(), host.getHostInfo().getPort());
 		}
 	}
 	
@@ -264,37 +267,37 @@ public class RedisClient implements Client {
 	}
 	
 	@Override
-	public <C extends MultiKeyedCommand, T extends Reply> PendingReply<T> send( SplittableCommand<C, T> command) throws NoConnectionsAvailableException {
-		
+	public <C extends SplittableCommand, T extends Reply> PendingReply<T> send( SplittableCommand<C, T> command) throws NoConnectionsAvailableException {
+		LOG.debug("starting send({}) process",command);
 		if (this.shouldHash()) {
 			
-			Map<Host, Set<String>> hashedKeys = new HashMap<Host, Set<String>>();
+			Map<Host, List<String>> hashedKeys = new HashMap<Host, List<String>>();
 			// get all keys of this SplittableCommand, hash them to their respective hosts
-			for(String key:command.getKeys()) {
+			for(String key:command.getKeys()) { 
 				
 				Host host = hostForKey(key);
-				if (hashedKeys.containsKey(host) == false) hashedKeys.put(host, new HashSet<String>());
+				if (hashedKeys.containsKey(host) == false) hashedKeys.put(host, new ArrayList<String>());
 				hashedKeys.get(host).add(key);
-				
 			}
 			
-			CountDownLatch doneSignal = new CountDownLatch(hashedKeys.size());
-			
+			LOG.debug("number of hosts to communicate with : {}", hashedKeys.size());
 			// split by host
-			for(Entry<Host, Set<String>> keysForHost:hashedKeys.entrySet()) {
-				
-				MultiKeyedCommand splitCommand = command.split(keysForHost.getValue());
-				
-				// XXX here, you should send the adresse of Donesignal to the splitCommand, so that it can use doneSignal.countDown() when he has finished working
-				
-				
-				keysForHost.getKey().send(splitCommand);// XXX which function does it uses? which send.
-				
-				
-				// Will that work while multiplexing? 
+			Map<Host, C> commandsForHost = new HashMap<Host, C>();
+			LOG.debug("Starting splitting");
+			for(Entry<Host, List<String>> keysForHost:hashedKeys.entrySet()) {
+				LOG.debug("fragmenting the MSet");
+				commandsForHost.put(keysForHost.getKey(), command.fragment(keysForHost.getValue()));	
 			}
 			
+			LOG.debug("Sending");
+			for(Entry<Host, C> commandForHost:commandsForHost.entrySet()) {
+				commandForHost.getKey().send(commandForHost.getValue());
+			}
+			
+			LOG.debug("finished splitting&sending part");
+			return command.getReply();
 		}
+		LOG.debug("out of the if");
 		return null;
 	}
 	

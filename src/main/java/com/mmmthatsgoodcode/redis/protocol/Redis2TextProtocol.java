@@ -9,6 +9,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.naming.OperationNotSupportedException;
 
@@ -23,6 +24,7 @@ import com.mmmthatsgoodcode.redis.protocol.Command;
 import com.mmmthatsgoodcode.redis.protocol.command.Exec;
 import com.mmmthatsgoodcode.redis.protocol.command.Exists;
 import com.mmmthatsgoodcode.redis.protocol.command.Get;
+import com.mmmthatsgoodcode.redis.protocol.command.MSet;
 import com.mmmthatsgoodcode.redis.protocol.command.Multi;
 import com.mmmthatsgoodcode.redis.protocol.command.Ping;
 import com.mmmthatsgoodcode.redis.protocol.command.Set;
@@ -106,6 +108,18 @@ public class Redis2TextProtocol implements Protocol {
 		}
 
 		@Override
+		public void encode(MSet command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(1+2*command.getKeysValues().size());
+			helper.addArg(commandNames.get(CommandType.MSET));
+			
+			for(Entry<String, byte[]> keyvalue : command.getKeysValues().entrySet()){
+				helper.addArg(keyvalue.getKey().getBytes(ENCODING));
+				helper.addArg(keyvalue.getValue());
+			}
+		}
+		
+		@Override
 		public void encode(Multi command, ByteBuf out) {
 			encodeNoArgCommand(out, commandNames.get(CommandType.MULTI));
 		}
@@ -167,6 +181,7 @@ public class Redis2TextProtocol implements Protocol {
 			else if (command instanceof Watch) encode((Watch) command, out);
 			else if (command instanceof Ping) encode((Ping) command, out);
 			else if (command instanceof Multi) encode((Multi) command, out);
+			else if (command instanceof MSet) encode((MSet) command, out);
 			else throw new OperationNotSupportedException();
 
 		}		
@@ -180,6 +195,7 @@ public class Redis2TextProtocol implements Protocol {
 			}
 			
 		}
+
 		
 	}
 	
@@ -441,6 +457,7 @@ public class Redis2TextProtocol implements Protocol {
 			.put(CommandType.GET, "GET".getBytes(ENCODING))
 			.put(CommandType.EXEC, "EXEC".getBytes(ENCODING))
 			.put(CommandType.EXISTS, "EXISTS".getBytes(ENCODING))
+			.put(CommandType.MSET, "MSET".getBytes(ENCODING))
 			.put(CommandType.MULTI, "MULTI".getBytes(ENCODING))
 			.put(CommandType.PING, "PING".getBytes(ENCODING))
 			.put(CommandType.SET, "SET".getBytes(ENCODING))

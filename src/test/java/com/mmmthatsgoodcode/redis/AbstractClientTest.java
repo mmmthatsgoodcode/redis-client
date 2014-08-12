@@ -1,7 +1,10 @@
 package com.mmmthatsgoodcode.redis;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
@@ -16,6 +19,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.junit.Assert.*;
 
@@ -33,24 +38,74 @@ import com.mmmthatsgoodcode.redis.client.monitor.LoggingMonitor;
 import com.mmmthatsgoodcode.redis.protocol.Reply;
 import com.mmmthatsgoodcode.redis.protocol.command.Exists;
 import com.mmmthatsgoodcode.redis.protocol.command.Get;
+import com.mmmthatsgoodcode.redis.protocol.command.MSet;
 import com.mmmthatsgoodcode.redis.protocol.command.Ping;
 import com.mmmthatsgoodcode.redis.protocol.command.Set;
 import com.mmmthatsgoodcode.redis.protocol.command.Setex;
 import com.mmmthatsgoodcode.redis.protocol.command.Watch;
 import com.mmmthatsgoodcode.redis.protocol.model.AbstractReply;
+import com.mmmthatsgoodcode.redis.protocol.model.MultiKeyedCommand;
 import com.mmmthatsgoodcode.redis.protocol.model.PendingReply;
+import com.mmmthatsgoodcode.redis.protocol.model.SplittableCommand;
 import com.mmmthatsgoodcode.redis.util.RedisClientMurmurHash;
 
 public abstract class AbstractClientTest {
 	
 	protected static RedisClient CLIENT;
+	protected final Logger LOG = LoggerFactory.getLogger(AbstractClientTest.class);
 	
+	@Test
+	public void MultiplexingMSet(){
+		
+		List<String> answers = new ArrayList<String>();
+		Map<String, byte[]> keysvalues = new HashMap<String, byte[]>();
+		boolean allgood = true;
+		
+		for(int r=1; r <=9;r++){
+			String key = UUID.randomUUID().toString();
+			byte[] value = ("value-for-"+key).getBytes();
+			keysvalues.put(key, value);
+		}
+		
+		try {
+			LOG.debug("SET : ");
+			
+			//MSET()
+			CLIENT.send(new MSet(keysvalues));
+			LOG.debug("send(MSet) done");
+			
+			// SET()
+			/*for(Entry<String, byte[]> entry : keysvalues.entrySet()){
+				System.out.println(CLIENT.send(new Set(entry.getKey(), entry.getValue())).get().value());
+			}*/
+			
+			
+			//System.out.println("\n\n\nMap size = "+keysvalues.size()+"\n\n\n");
+			
+			
+			LOG.debug("GET : ");
+			for(Entry<String, byte[]> entry : keysvalues.entrySet()){
+				byte[] value = CLIENT.send(new Get(entry.getKey())).get().value();
+				/*System.out.println("response = "+new String(value));
+				System.out.println("original = "+new String(entry.getValue()));*/
+				
+				if(!new String(value).equals(new String(entry.getValue()))){
+					LOG.error("values don't match!");
+					allgood = false;
+				}
+			}
+			//assertTrue(allgood);
+		} catch (NoConnectionsAvailableException e) {
+			LOG.error("No Connection available");
+		}
+	}
 	
+	/*
 	@Test
 	public void testSimpleCommands() throws InterruptedException, NoConnectionsAvailableException {
 		
 		CLIENT.send(new Ping());
-				
+		
 		
 	}
 	
@@ -221,6 +276,6 @@ public abstract class AbstractClientTest {
 		System.out.println("Multi-threaded transactions");
 		System.out.println("Total "+getLatency.getCount()+" Set+Get Transactions, median:"+getLatency.getSnapshot().getMedian()/1000000+"ms 98th:"+getLatency.getSnapshot().get98thPercentile()/1000000+"ms 99th:"+getLatency.getSnapshot().get99thPercentile()/1000000+"ms");
 		
-	}
+	}*/
 	
 }

@@ -35,7 +35,7 @@ public interface Client {
 			PinnedCommand<T> pinnedCommand)
 			throws NoConnectionsAvailableException;
 
-	public abstract <C extends MultiKeyedCommand, T extends Reply> PendingReply<T> send(SplittableCommand<C, T> command)
+	public abstract <C extends SplittableCommand, T extends Reply> PendingReply<T> send(SplittableCommand<C, T> command)
 			throws NoConnectionsAvailableException;
 
 	public abstract <T extends Reply> PendingReply<T> send(Command<T> command)
@@ -55,5 +55,4 @@ public interface Client {
 	public abstract Protocol getProtocol();
 
 	public abstract EventLoopGroup getEventLoopGroup();
-
 }

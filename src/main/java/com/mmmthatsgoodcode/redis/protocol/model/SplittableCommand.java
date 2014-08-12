@@ -1,24 +1,55 @@
 package com.mmmthatsgoodcode.redis.protocol.model;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.mmmthatsgoodcode.redis.Host;
 import com.mmmthatsgoodcode.redis.protocol.Command;
 import com.mmmthatsgoodcode.redis.protocol.Reply;
 
-public abstract class SplittableCommand<C extends MultiKeyedCommand, T extends Reply> extends MultiKeyedCommand<T> {
-	
-	public static class PendingSplitReply<T extends Reply> extends PendingReply<T> {
+public abstract class SplittableCommand<C extends SplittableCommand, T extends Reply> extends MultiKeyedCommand<T> {
+	public class PendingSplitReply extends PendingReply<T> {
 
-		public PendingSplitReply(Command<T> command) {
+		private List<T> partialReplies = new ArrayList<T>();
+		
+		public PendingSplitReply(C command) {
 			super(command);
+		}
+		
+		public synchronized void finalize(T partialReply) {
+			LOG.debug("SplittableCommand.PendingSplitReply.finalize()");
+			partialReplies.add(partialReply);
+			LOG.debug("SplitsGet() = "+SplittableCommand.this.splits.get());
+			if (SplittableCommand.this.splits.decrementAndGet() == 0) {
+				LOG.debug("Starts the combine!");
+				this.reply = (T) ((SplittableCommand) getCommand()).combine(partialReplies);
+				this.command.replyReceived(this.reply);
+				this.lock.release();
+			}
 		}
 	}
 	
-	public SplittableCommand(String key, String[] keys) {
-		super(key, keys);
-		
-		this.reply = new PendingSplitReply<T>(this);
+	protected final Logger LOG = LoggerFactory.getLogger(SplittableCommand.class);
+	protected final AtomicInteger splits = new AtomicInteger(0);
+	
+	@SuppressWarnings("unchecked")
+	public SplittableCommand(Map<String, byte[]> keys) {
+		super(keys);
+		this.reply = this.new PendingSplitReply((C) this);
 	}
 
-	public abstract C split(Set<String> keys);
+	public final C split(List<String> keys) {
+		this.splits.incrementAndGet();
+		return fragment(keys);
+	}
+	
+	public abstract C fragment(List<String> keys);
+	public abstract T combine(List<T> partialReplies);
+		
 }

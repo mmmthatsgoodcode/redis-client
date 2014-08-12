@@ -15,6 +15,7 @@ public class ClientTest extends AbstractClientTest {
 		CLIENT = new RedisClient.Builder()
 		.addHost("127.0.0.1", 6379)
 		.addHost("127.0.0.1", 6380)
+		.addHost("127.0.0.1", 6381)
 		.addMonitor(new LoggingMonitor())
 		.withTrafficLogging(true)
 		.shouldHash(true)

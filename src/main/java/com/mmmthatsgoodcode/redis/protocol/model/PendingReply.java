@@ -43,11 +43,12 @@ public class PendingReply<T extends Reply> implements Future<T> {
 	 * Notify the Command of the received Reply, release semaphore
 	 * @param reply
 	 */
-	public final void finalize(T reply) {
+	public void finalize(T reply) {
 		LOG.debug("Finalized {}", this);
 		this.reply = reply;
 		this.command.replyReceived(this.reply);
 		this.lock.release();
+		LOG.debug("Lock RELEASED");
 	}
 	
 	public final void finalize(Throwable cause) {
