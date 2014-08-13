@@ -2,10 +2,6 @@ package com.mmmthatsgoodcode.redis.protocol.model;
 
 import io.netty.channel.ChannelFuture;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
