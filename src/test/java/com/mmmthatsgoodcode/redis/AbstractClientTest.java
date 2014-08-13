@@ -14,6 +14,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +39,7 @@ public abstract class AbstractClientTest {
 	protected final Logger LOG = LoggerFactory.getLogger(AbstractClientTest.class);
 	
 	@Test
+	@Ignore
 	public void MultiplexingMSet() throws InterruptedException{
 		
 		Map<String, byte[]> keysvalues = new HashMap<String, byte[]>();
@@ -85,6 +87,7 @@ public abstract class AbstractClientTest {
 	
 	
 	@Test
+	@Ignore
 	public void testSimpleCommands() throws InterruptedException, NoConnectionsAvailableException {
 		
 		CLIENT.send(new Ping());
@@ -93,6 +96,7 @@ public abstract class AbstractClientTest {
 	}
 	
 	@Test
+	@Ignore
 	public void multiThreadedPipelineTest() throws InterruptedException {
 				
 		ExecutorService executor = Executors.newFixedThreadPool(8);
@@ -145,6 +149,7 @@ public abstract class AbstractClientTest {
 	
 	
 	@Test
+	@Ignore
 	public void singleThreadedPipelineTest() throws InterruptedException, NoConnectionsAvailableException, ExecutionException, TimeoutException {
 		
 		final Timer getLatency = new Timer();
@@ -175,6 +180,7 @@ public abstract class AbstractClientTest {
 	}
 	
 	@Test
+	@Ignore
 	public void testTransactions() throws InterruptedException, ExecutionException, TimeoutException {
 		
 		final Timer getLatency = new Timer();
@@ -206,6 +212,7 @@ public abstract class AbstractClientTest {
 	}
 	
 	@Test
+	@Ignore
 	public void testMultiThreadedTransactions() throws InterruptedException {
 		
 		ExecutorService executor = Executors.newFixedThreadPool(4);
