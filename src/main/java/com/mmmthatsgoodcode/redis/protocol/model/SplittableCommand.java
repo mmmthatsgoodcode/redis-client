@@ -3,14 +3,11 @@ package com.mmmthatsgoodcode.redis.protocol.model;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.mmmthatsgoodcode.redis.Host;
-import com.mmmthatsgoodcode.redis.protocol.Command;
 import com.mmmthatsgoodcode.redis.protocol.Reply;
 
 public abstract class SplittableCommand<C extends SplittableCommand, T extends Reply> extends MultiKeyedCommand<T> {

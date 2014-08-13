@@ -2,21 +2,14 @@ package com.mmmthatsgoodcode.redis;
 
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.MultithreadEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
@@ -25,25 +18,14 @@ import org.slf4j.LoggerFactory;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
-import com.lmax.disruptor.BatchEventProcessor;
-import com.lmax.disruptor.RingBuffer;
-import com.lmax.disruptor.SleepingWaitStrategy;
-import com.lmax.disruptor.WaitStrategy;
-import com.mmmthatsgoodcode.redis.Host.Builder;
 import com.mmmthatsgoodcode.redis.client.NoConnectionsAvailableException;
 import com.mmmthatsgoodcode.redis.client.Transaction;
 import com.mmmthatsgoodcode.redis.client.monitor.SelfHealingMonitor;
-import com.mmmthatsgoodcode.redis.disruptor.processor.CommandEvent;
-import com.mmmthatsgoodcode.redis.disruptor.processor.CommandHasher;
-import com.mmmthatsgoodcode.redis.disruptor.processor.CommandRouter;
-import com.mmmthatsgoodcode.redis.disruptor.processor.CommandEvent.CommandEventTranslator;
 import com.mmmthatsgoodcode.redis.protocol.Command;
 import com.mmmthatsgoodcode.redis.protocol.Redis2TextProtocol;
 import com.mmmthatsgoodcode.redis.protocol.Reply;
 import com.mmmthatsgoodcode.redis.protocol.command.Exec;
-import com.mmmthatsgoodcode.redis.protocol.command.MSet;
 import com.mmmthatsgoodcode.redis.protocol.model.KeyedCommand;
-import com.mmmthatsgoodcode.redis.protocol.model.MultiKeyedCommand;
 import com.mmmthatsgoodcode.redis.protocol.model.PendingReply;
 import com.mmmthatsgoodcode.redis.protocol.model.PinnedCommand;
 import com.mmmthatsgoodcode.redis.protocol.model.SplittableCommand;
@@ -298,7 +280,8 @@ public class RedisClient implements Client {
 			return command.getReply();
 		}
 		LOG.debug("out of the if");
-		return null;
+		// TODO find another way to do it, since it will cause problem to commands like MGet.
+		return hosts.get(new Random().nextInt(hosts.size())).send(command);
 	}
 	
 	/* (non-Javadoc)
