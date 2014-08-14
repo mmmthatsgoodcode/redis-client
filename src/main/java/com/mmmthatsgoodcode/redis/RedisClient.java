@@ -279,8 +279,8 @@ public class RedisClient implements Client {
 			LOG.debug("finished splitting&sending part");
 			return command.getReply();
 		}
-		LOG.debug("out of the if");
-		// TODO find another way to do it, since it will cause problem to commands like MGet.
+		
+		LOG.warn("Sending MultiKeyed command to a randomly selected server in the cluster. Consider enabling hashing.");
 		return hosts.get(new Random().nextInt(hosts.size())).send(command);
 	}
 	
