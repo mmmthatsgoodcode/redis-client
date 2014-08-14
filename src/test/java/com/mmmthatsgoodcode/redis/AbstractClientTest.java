@@ -1,60 +1,102 @@
 package com.mmmthatsgoodcode.redis;
 
+import static org.junit.Assert.*;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Random;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.UUID;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.codahale.metrics.Timer;
 import com.codahale.metrics.Timer.Context;
-import com.google.common.hash.Hashing;
-import com.lmax.disruptor.BlockingWaitStrategy;
-import com.lmax.disruptor.BusySpinWaitStrategy;
-import com.lmax.disruptor.SleepingWaitStrategy;
-import com.lmax.disruptor.YieldingWaitStrategy;
 import com.mmmthatsgoodcode.redis.client.NoConnectionsAvailableException;
 import com.mmmthatsgoodcode.redis.client.RedisClientException;
 import com.mmmthatsgoodcode.redis.client.Transaction;
-import com.mmmthatsgoodcode.redis.client.monitor.LoggingMonitor;
 import com.mmmthatsgoodcode.redis.protocol.Reply;
 import com.mmmthatsgoodcode.redis.protocol.command.Exists;
 import com.mmmthatsgoodcode.redis.protocol.command.Get;
+import com.mmmthatsgoodcode.redis.protocol.command.MSet;
 import com.mmmthatsgoodcode.redis.protocol.command.Ping;
 import com.mmmthatsgoodcode.redis.protocol.command.Set;
-import com.mmmthatsgoodcode.redis.protocol.command.Setex;
 import com.mmmthatsgoodcode.redis.protocol.command.Watch;
 import com.mmmthatsgoodcode.redis.protocol.model.AbstractReply;
-import com.mmmthatsgoodcode.redis.protocol.model.PendingReply;
-import com.mmmthatsgoodcode.redis.util.RedisClientMurmurHash;
 
 public abstract class AbstractClientTest {
 	
 	protected static RedisClient CLIENT;
+	protected final Logger LOG = LoggerFactory.getLogger(AbstractClientTest.class);
+	
+	@Test
+	@Ignore
+	public void MultiplexingMSet() throws InterruptedException{
+		
+		Map<String, byte[]> keysvalues = new HashMap<String, byte[]>();
+		boolean allgood = true;
+		
+		for(int r=1; r <=9;r++){
+			String key = UUID.randomUUID().toString();
+			byte[] value = ("value-for-"+key).getBytes();
+			keysvalues.put(key, value);
+		}
+		
+		try {
+			LOG.debug("SET : ");
+			
+			//MSET()
+			CLIENT.send(new MSet(keysvalues));
+			LOG.debug("send(MSet) done");
+			
+			// SET()
+			for(Entry<String, byte[]> entry : keysvalues.entrySet()){
+				System.out.println(CLIENT.send(new Set(entry.getKey(), entry.getValue())).get().value());
+			}
+			
+			
+			System.out.println("\n\n\nMap size = "+keysvalues.size()+"\n\n\n");
+			
+			
+			LOG.debug("GET : ");
+			for(Entry<String, byte[]> entry : keysvalues.entrySet()){
+				byte[] value = CLIENT.send(new Get(entry.getKey())).get().value();
+				System.out.println("response = "+new String(value));
+				System.out.println("original = "+new String(entry.getValue()));
+				
+				if(!new String(value).equals(new String(entry.getValue()))){
+					LOG.error("values don't match!");
+					allgood = false;
+				}
+			}
+			Thread.sleep(2000);
+			assertTrue(allgood);
+		} catch (NoConnectionsAvailableException e) {
+			LOG.error("No Connection available");
+		}
+	}
 	
 	
 	@Test
+	@Ignore
 	public void testSimpleCommands() throws InterruptedException, NoConnectionsAvailableException {
 		
 		CLIENT.send(new Ping());
-				
+		
 		
 	}
 	
 	@Test
+	@Ignore
 	public void multiThreadedPipelineTest() throws InterruptedException {
 				
 		ExecutorService executor = Executors.newFixedThreadPool(8);
@@ -107,6 +149,7 @@ public abstract class AbstractClientTest {
 	
 	
 	@Test
+	@Ignore
 	public void singleThreadedPipelineTest() throws InterruptedException, NoConnectionsAvailableException, ExecutionException, TimeoutException {
 		
 		final Timer getLatency = new Timer();
@@ -137,6 +180,7 @@ public abstract class AbstractClientTest {
 	}
 	
 	@Test
+	@Ignore
 	public void testTransactions() throws InterruptedException, ExecutionException, TimeoutException {
 		
 		final Timer getLatency = new Timer();
@@ -168,6 +212,7 @@ public abstract class AbstractClientTest {
 	}
 	
 	@Test
+	@Ignore
 	public void testMultiThreadedTransactions() throws InterruptedException {
 		
 		ExecutorService executor = Executors.newFixedThreadPool(4);
