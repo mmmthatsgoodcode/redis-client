@@ -3879,8 +3879,12 @@ public class Redis2TextProtocolTest {
 		ByteBuf out = allocator.heapBuffer();
 		
 		List<String> temp = new ArrayList<String>();
+		temp.add("FirstKey");
+		temp.add("SecondKey");
+		temp.add("ThirdKey");
+		temp.add("FourthKey");
 		
-		protocol.getEncoder().encode(new Mget( "FirstKey","SecondKey","ThirdKey", "FourthKey" ), out);
+		protocol.getEncoder().encode(new Mget( temp ), out);
 		
 		byte[] encoded = new byte[out.readableBytes()];
 		out.readBytes(encoded);
