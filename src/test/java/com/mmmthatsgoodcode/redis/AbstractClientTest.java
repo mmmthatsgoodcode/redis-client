@@ -25,9 +25,11 @@ import com.mmmthatsgoodcode.redis.client.NoConnectionsAvailableException;
 import com.mmmthatsgoodcode.redis.client.RedisClientException;
 import com.mmmthatsgoodcode.redis.client.Transaction;
 import com.mmmthatsgoodcode.redis.protocol.Reply;
+import com.mmmthatsgoodcode.redis.protocol.command.Del;
 import com.mmmthatsgoodcode.redis.protocol.command.Exists;
 import com.mmmthatsgoodcode.redis.protocol.command.Get;
 import com.mmmthatsgoodcode.redis.protocol.command.MSet;
+import com.mmmthatsgoodcode.redis.protocol.command.Mget;
 import com.mmmthatsgoodcode.redis.protocol.command.Ping;
 import com.mmmthatsgoodcode.redis.protocol.command.Set;
 import com.mmmthatsgoodcode.redis.protocol.command.Watch;
@@ -38,6 +40,38 @@ public abstract class AbstractClientTest {
 	protected static RedisClient CLIENT;
 	protected final Logger LOG = LoggerFactory.getLogger(AbstractClientTest.class);
 	
+	@Test
+	@Ignore
+	public void MultiplexingDel() throws InterruptedException{
+		
+		Map<String, byte[]> keysvalues = new HashMap<String, byte[]>();
+		
+		for(int r=1; r <=9;r++){
+			String key = UUID.randomUUID().toString();
+			byte[] value = ("value-for-"+key).getBytes();
+			keysvalues.put(key, value);
+		}
+		try{
+			LOG.debug("MSET : ");
+			CLIENT.send(new MSet(keysvalues));
+			LOG.debug("send(MSet) done");
+			
+			LOG.debug("\n\n\nMap size = "+keysvalues.size()+"\n\n\n");
+			
+			Thread.sleep(2000);
+			
+			LOG.debug("DEL : ");
+			int deletedElements = CLIENT.send(new Del(new ArrayList<String>(keysvalues.keySet()))).get().value();
+			System.out.println("deletedElements ok");
+			
+			LOG.warn("deletedElements = " + deletedElements + "\nkeysvalues.size() = " + keysvalues.size());
+			assertTrue(deletedElements==keysvalues.size());
+			
+		}catch (NoConnectionsAvailableException e){
+			LOG.error("No Connection available");
+		}
+	}
+
 	@Test
 	@Ignore
 	public void MultiplexingMSet() throws InterruptedException{
@@ -52,19 +86,13 @@ public abstract class AbstractClientTest {
 		}
 		
 		try {
-			LOG.debug("SET : ");
+			LOG.debug("MSET : ");
 			
 			//MSET()
 			CLIENT.send(new MSet(keysvalues));
 			LOG.debug("send(MSet) done");
 			
-			// SET()
-			for(Entry<String, byte[]> entry : keysvalues.entrySet()){
-				System.out.println(CLIENT.send(new Set(entry.getKey(), entry.getValue())).get().value());
-			}
-			
-			
-			System.out.println("\n\n\nMap size = "+keysvalues.size()+"\n\n\n");
+			LOG.debug("\n\n\nMap size = "+keysvalues.size()+"\n\n\n");
 			
 			
 			LOG.debug("GET : ");
@@ -84,7 +112,6 @@ public abstract class AbstractClientTest {
 			LOG.error("No Connection available");
 		}
 	}
-	
 	
 	@Test
 	@Ignore

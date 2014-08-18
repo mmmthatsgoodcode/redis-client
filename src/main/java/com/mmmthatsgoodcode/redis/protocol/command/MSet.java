@@ -41,12 +41,12 @@ public class MSet extends SplittableCommand<MSet, StatusReply>{
 			public String toString(){
 				return "Child n."+nb;
 			}
-			private final PendingReply<StatusReply> childReply = new PendingReply<StatusReply>(parent) {
+			private final PendingReply<StatusReply> childReply = new PendingReply<StatusReply>(this) {
 				
 				public void finalize(StatusReply partialReply) {
 					LOG.debug("MSet.split(...).new MSet() {...}.getReply().new PendingReply() {...}.finalize()");
-					parent.getReply().finalize(partialReply);
 					super.finalize(partialReply);
+					parent.getReply().finalize(partialReply);
 					LOG.debug("back from super.finalize");
 				}
 				
@@ -73,6 +73,6 @@ public class MSet extends SplittableCommand<MSet, StatusReply>{
 	}
 
 	public String toString(){
-		return "parent";
+		return "MSet-parent";
 	}
 }

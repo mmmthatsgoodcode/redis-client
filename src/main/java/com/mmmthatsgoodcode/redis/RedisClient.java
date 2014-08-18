@@ -262,13 +262,14 @@ public class RedisClient implements Client {
 				hashedKeys.get(host).add(key);
 			}
 			
+			
 			LOG.debug("number of hosts to communicate with : {}", hashedKeys.size());
 			// split by host
 			Map<Host, C> commandsForHost = new HashMap<Host, C>();
 			LOG.debug("Starting splitting");
 			for(Entry<Host, List<String>> keysForHost:hashedKeys.entrySet()) {
-				LOG.debug("fragmenting the MSet");
-				commandsForHost.put(keysForHost.getKey(), command.fragment(keysForHost.getValue()));	
+				LOG.debug("fragmenting the command");
+				commandsForHost.put(keysForHost.getKey(), command.split(keysForHost.getValue()));	
 			}
 			
 			LOG.debug("Sending");
