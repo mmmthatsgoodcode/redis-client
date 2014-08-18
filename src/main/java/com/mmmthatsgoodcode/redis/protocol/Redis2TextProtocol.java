@@ -650,10 +650,10 @@ public class Redis2TextProtocol implements Protocol {
 		@Override
 		public void encode(Mget command, ByteBuf out) {
 			EncodeHelper helper = new EncodeHelper(out);
-			helper.addArgc(1+command.getKeyList().size());
+			helper.addArgc(1+command.getKeys().size());
 			helper.addArg(commandNames.get(CommandType.MGET));
 			
-			for(String key : command.getKeyList()){
+			for(String key : command.getKeys()){
 				helper.addArg(key.getBytes(ENCODING));				
 			}
 		}

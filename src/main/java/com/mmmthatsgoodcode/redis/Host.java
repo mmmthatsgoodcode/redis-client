@@ -119,7 +119,7 @@ public class Host {
 	}
 	
 	public <T extends Reply> PendingReply<T> send(Command<T> command) throws NoConnectionsAvailableException {
-		LOG.debug("Outgoing command {}", command);
+		LOG.debug("Outgoing {} command {}", command.getClass(), command);
 		if (connections.size() == 0) {
 			LOG.error("Attempted to schedule command {} with no Connections available!");
 			throw new IllegalStateException("No connections!");
