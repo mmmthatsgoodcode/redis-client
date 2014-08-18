@@ -28,6 +28,7 @@ import com.mmmthatsgoodcode.redis.protocol.Reply;
 import com.mmmthatsgoodcode.redis.protocol.command.Exists;
 import com.mmmthatsgoodcode.redis.protocol.command.Get;
 import com.mmmthatsgoodcode.redis.protocol.command.MSet;
+import com.mmmthatsgoodcode.redis.protocol.command.Mget;
 import com.mmmthatsgoodcode.redis.protocol.command.Ping;
 import com.mmmthatsgoodcode.redis.protocol.command.Set;
 import com.mmmthatsgoodcode.redis.protocol.command.Watch;
@@ -37,6 +38,45 @@ public abstract class AbstractClientTest {
 	
 	protected static RedisClient CLIENT;
 	protected final Logger LOG = LoggerFactory.getLogger(AbstractClientTest.class);
+	
+	
+	@Test
+	@Ignore
+	public void MultiplexinMget() throws InterruptedException {
+		
+		Map<String, byte[]> keysvalues = new HashMap<String, byte[]>();
+		
+		for(int r=1; r <=9;r++){
+			String key = UUID.randomUUID().toString();
+			byte[] value = ("value-for-"+key).getBytes();
+			keysvalues.put(key, value);
+		}
+		
+		try{
+			LOG.debug("MSET : ");
+			
+			//MSET()
+			CLIENT.send(new MSet(keysvalues));
+			LOG.debug("send(MSet) done");
+			
+			LOG.debug("\n\n\nMap size = " + keysvalues.size() + "\n\n\n");
+			
+			LOG.debug("MGET : ");
+			List<Reply> repliesList = (CLIENT.send(new Mget(keysvalues))).get().value();
+			LOG.debug("keysvalues.size() = "+keysvalues.size());
+			LOG.debug("repliesList.size() = "+ repliesList.size());
+			
+			int i = 0;
+			for(Entry<String, byte[]> reply : keysvalues.entrySet()){
+				if(!new String((byte[])repliesList.get(i).value()).equals(new String((byte[])reply.getValue()))){
+					assertTrue(false);
+				}
+				i++;
+			}
+		}catch (NoConnectionsAvailableException e){
+			LOG.error("No connection available");
+		}
+	}
 	
 	@Test
 	@Ignore

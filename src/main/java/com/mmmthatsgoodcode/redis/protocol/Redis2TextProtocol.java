@@ -25,6 +25,7 @@ import com.mmmthatsgoodcode.redis.protocol.command.Exec;
 import com.mmmthatsgoodcode.redis.protocol.command.Exists;
 import com.mmmthatsgoodcode.redis.protocol.command.Get;
 import com.mmmthatsgoodcode.redis.protocol.command.MSet;
+import com.mmmthatsgoodcode.redis.protocol.command.Mget;
 import com.mmmthatsgoodcode.redis.protocol.command.Multi;
 import com.mmmthatsgoodcode.redis.protocol.command.Ping;
 import com.mmmthatsgoodcode.redis.protocol.command.Set;
@@ -84,8 +85,19 @@ public class Redis2TextProtocol implements Protocol {
 			}
 			
 		}
+
 		
-		
+		@Override
+		public void encode(Mget command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(1+command.getKeys().size());
+			helper.addArg(commandNames.get(CommandType.MGET));
+			
+			for(String key : command.getKeys()){
+				helper.addArg(key.getBytes(ENCODING));				
+			}
+		}
+
 		@Override
 		public void encode(Exec command, ByteBuf out) {
 			encodeNoArgCommand(out, commandNames.get(CommandType.EXEC));
@@ -182,6 +194,7 @@ public class Redis2TextProtocol implements Protocol {
 			else if (command instanceof Ping) encode((Ping) command, out);
 			else if (command instanceof Multi) encode((Multi) command, out);
 			else if (command instanceof MSet) encode((MSet) command, out);
+			else if (command instanceof Mget) encode((Mget) command, out);
 			else throw new OperationNotSupportedException();
 
 		}		
@@ -457,6 +470,7 @@ public class Redis2TextProtocol implements Protocol {
 			.put(CommandType.GET, "GET".getBytes(ENCODING))
 			.put(CommandType.EXEC, "EXEC".getBytes(ENCODING))
 			.put(CommandType.EXISTS, "EXISTS".getBytes(ENCODING))
+			.put(CommandType.MGET, "MGET".getBytes(ENCODING))
 			.put(CommandType.MSET, "MSET".getBytes(ENCODING))
 			.put(CommandType.MULTI, "MULTI".getBytes(ENCODING))
 			.put(CommandType.PING, "PING".getBytes(ENCODING))
