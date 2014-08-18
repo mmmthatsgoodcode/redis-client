@@ -21,7 +21,7 @@ import io.netty.buffer.PooledByteBufAllocator;
 public interface Protocol {
 	
 	public enum ReplyType { BULK, ERROR, INTEGER, MULTI_BULK, STATUS, UNKNOWN }
-	public enum CommandType { GET, SET, SETEX, EXEC, EXISTS, MSET, MULTI, PING, SETNX, WATCH }
+	public enum CommandType { GET, SET, SETEX, EXEC, EXISTS, MGET, MSET, MULTI, PING, SETNX, WATCH }
 	
 	public ByteBufAllocator getByteBufAllocator();
 	
@@ -30,6 +30,7 @@ public interface Protocol {
 		public void encode(Exec command, ByteBuf out);
 		public void encode(Exists command, ByteBuf out);
 		public void encode(Get command, ByteBuf out);
+		public void encode(Mget command, ByteBuf out);
 		public void encode(MSet command, ByteBuf out);
 		public void encode(Multi command, ByteBuf out);
 		public void encode(Ping command, ByteBuf out);
