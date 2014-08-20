@@ -251,8 +251,9 @@ public class RedisClient implements Client {
 	@Override
 	public <C extends SplittableCommand, T extends Reply> PendingReply<T> send( SplittableCommand<C, T> command) throws NoConnectionsAvailableException {
 		LOG.debug("starting send({}) process",command);
-		if (this.shouldHash()) {
 			
+		if (this.shouldHash()) {
+			command.setOriginalKeys(command.getKeys());
 			Map<Host, List<String>> hashedKeys = new HashMap<Host, List<String>>();
 			// get all keys of this SplittableCommand, hash them to their respective hosts
 			for(String key:command.getKeys()) { 
