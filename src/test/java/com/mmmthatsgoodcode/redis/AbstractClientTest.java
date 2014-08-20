@@ -41,6 +41,7 @@ public abstract class AbstractClientTest {
 	
 	
 	@Test
+	@Ignore
 	public void MultiplexinMget() throws InterruptedException {
 		
 		Map<String, byte[]> keysvalues = new HashMap<String, byte[]>();
@@ -77,40 +78,6 @@ public abstract class AbstractClientTest {
 		}
 	}
 	
-	
-	/*
-	@Test
-	@Ignore
-	public void MultiplexingDel() throws InterruptedException{
-		
-		Map<String, byte[]> keysvalues = new HashMap<String, byte[]>();
-		
-		for(int r=1; r <=9;r++){
-			String key = UUID.randomUUID().toString();
-			byte[] value = ("value-for-"+key).getBytes();
-			keysvalues.put(key, value);
-		}
-		try{
-			LOG.debug("MSET : ");
-			CLIENT.send(new MSet(keysvalues));
-			LOG.debug("send(MSet) done");
-			
-			LOG.debug("\n\n\nMap size = "+keysvalues.size()+"\n\n\n");
-			
-			Thread.sleep(2000);
-			
-			LOG.debug("DEL : ");
-			int deletedElements = CLIENT.send(new Del(new ArrayList<String>(keysvalues.keySet()))).get().value();
-			System.out.println("deletedElements ok");
-			
-			LOG.warn("deletedElements = " + deletedElements + "\nkeysvalues.size() = " + keysvalues.size());
-			assertTrue(deletedElements==keysvalues.size());
-			
-		}catch (NoConnectionsAvailableException e){
-			LOG.error("No Connection available");
-		}
-	}
-
 	@Test
 	@Ignore
 	public void MultiplexingMSet() throws InterruptedException{
@@ -339,6 +306,6 @@ public abstract class AbstractClientTest {
 		System.out.println("Multi-threaded transactions");
 		System.out.println("Total "+getLatency.getCount()+" Set+Get Transactions, median:"+getLatency.getSnapshot().getMedian()/1000000+"ms 98th:"+getLatency.getSnapshot().get98thPercentile()/1000000+"ms 99th:"+getLatency.getSnapshot().get99thPercentile()/1000000+"ms");
 		
-	}*/
+	}
 	
 }
