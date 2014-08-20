@@ -153,7 +153,11 @@ public class Redis2TextProtocol implements Protocol {
 
 		@Override
 		public void encode(Setnx command, ByteBuf out) {
-			encode((Set) command, out);
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(3);
+			helper.addArg(commandNames.get(CommandType.SETNX));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getValue());
 		}
 
 		@Override
