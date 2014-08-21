@@ -23,7 +23,7 @@ public class MSet extends SplittableCommand<MSet, StatusReply>{
 	}
 	
 	@Override
-	public MSet fragment(List<String> keys) {
+	protected MSet fragment(List<String> keys) {
 		this.i++;
 		// get the values from this MSet instanced for "keys"
 		Map<String, byte[]> temp = new HashMap<String, byte[]>();
