@@ -268,7 +268,7 @@ public class RedisClient implements Client {
 			LOG.debug("Starting splitting");
 			for(Entry<Host, List<String>> keysForHost:hashedKeys.entrySet()) {
 				LOG.debug("fragmenting the MSet");
-				commandsForHost.put(keysForHost.getKey(), command.fragment(keysForHost.getValue()));	
+				commandsForHost.put(keysForHost.getKey(), command.split(keysForHost.getValue()));	
 			}
 			
 			LOG.debug("Sending");
