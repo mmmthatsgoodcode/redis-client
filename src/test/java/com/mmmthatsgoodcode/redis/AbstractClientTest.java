@@ -4,9 +4,11 @@ import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -29,6 +31,9 @@ import com.mmmthatsgoodcode.redis.protocol.command.Exists;
 import com.mmmthatsgoodcode.redis.protocol.command.Get;
 import com.mmmthatsgoodcode.redis.protocol.command.MSet;
 import com.mmmthatsgoodcode.redis.protocol.command.Ping;
+import com.mmmthatsgoodcode.redis.protocol.command.SAdd;
+import com.mmmthatsgoodcode.redis.protocol.command.SInter;
+import com.mmmthatsgoodcode.redis.protocol.command.SUnion;
 import com.mmmthatsgoodcode.redis.protocol.command.Set;
 import com.mmmthatsgoodcode.redis.protocol.command.Watch;
 import com.mmmthatsgoodcode.redis.protocol.model.AbstractReply;
@@ -38,11 +43,135 @@ public abstract class AbstractClientTest {
 	protected static RedisClient CLIENT;
 	protected final Logger LOG = LoggerFactory.getLogger(AbstractClientTest.class);
 	
+	
+	@Test
+	@Ignore
+	public void MultiplexingSInter() throws InterruptedException{
+		//Generating random Sets
+				Map<String, List<byte[]>> keysvalues = new HashMap<String, List<byte[]>>();
+				List<byte[]> availableMembers = new ArrayList<byte[]>();
+				
+				
+				for(int r=1; r <=9;r++){
+					String key = UUID.randomUUID().toString();
+					keysvalues.put(key, new ArrayList<byte[]>());
+				}
+				
+				for(int i=0 ; i<3; i++){
+					availableMembers.add(("member"+i).getBytes());
+				}
+				
+				Random random = new Random();
+				
+				for(Entry<String, List<byte[]>> entry : keysvalues.entrySet()){
+					for(int i=0 ; i<5 ; i++){
+						entry.getValue().add(availableMembers.get(random.nextInt(availableMembers.size())));
+					}
+				}
+				
+				try{
+					//Adding each set to DB
+					LOG.debug("SADD : ");
+					for(Entry<String, List<byte[]>> entry : keysvalues.entrySet()){
+						CLIENT.send(new SAdd(entry.getKey(), entry.getValue()));
+					}
+
+					LOG.debug("SINTER : ");
+					List<Reply> replies = CLIENT.send( new SInter( new ArrayList<String>( keysvalues.keySet() ) ) ).get().value();
+					LOG.debug("\n\nReceived Replies\n");
+					for(Reply re : replies){
+						LOG.debug("{}",new String((byte[])re.value()));
+					}
+					
+					boolean isthere = false;
+					LOG.debug("\n\n\nStarting Check");
+					if(replies.size()>0){
+						//checks if each reply is unique
+						for(Entry<String, List<byte[]>> entry : keysvalues.entrySet()){
+							isthere = false;
+							for(Reply rep : replies){
+								for(byte[] bytes : entry.getValue()){
+									if(new String(bytes).equals(new String((byte[])rep.value()))){
+										isthere=true;
+									}
+								}
+							}
+							if(!isthere){
+								assertFalse(true);
+							}
+						}
+					}else{
+					LOG.debug("Empty set of Reply");
+					}
+					LOG.debug("All went well!");
+					assertTrue(true);
+					
+				}catch(NoConnectionsAvailableException e){
+					LOG.error("No Connection available");
+				}
+	}
+	
+	@Test
+	@Ignore
+	public void MultiplexingSUnion() throws InterruptedException{
+		
+		//Generating random Sets
+		Map<String, List<byte[]>> keysvalues = new HashMap<String, List<byte[]>>();
+		List<byte[]> availableMembers = new ArrayList<byte[]>();
+		
+		
+		for(int r=1; r <=9;r++){
+			String key = UUID.randomUUID().toString();
+			keysvalues.put(key, new ArrayList<byte[]>());
+		}
+		
+		for(int i=0 ; i<50; i++){
+			availableMembers.add(("member"+i).getBytes());
+		}
+		
+		Random random = new Random();
+		
+		for(Entry<String, List<byte[]>> entry : keysvalues.entrySet()){
+			for(int i=0 ; i<5 ; i++){
+				entry.getValue().add(availableMembers.get(random.nextInt(availableMembers.size())));
+			}
+		}
+		
+		try{
+			//Adding each set to DB
+			LOG.debug("SADD : ");
+			for(Entry<String, List<byte[]>> entry : keysvalues.entrySet()){
+				CLIENT.send(new SAdd(entry.getKey(), entry.getValue()));
+			}
+
+			LOG.debug("SUNION : ");
+			List<Reply> replies = CLIENT.send( new SUnion( new ArrayList<String>( keysvalues.keySet() ) ) ).get().value();
+			
+			List<Reply> comparator = new ArrayList<Reply>();
+			
+			//checks if each reply is unique
+			for(Reply reply : replies){
+				if(comparator.contains(reply)){
+					assertTrue(false);
+				}
+				else{
+					comparator.add(reply);
+				}
+			}
+			assertTrue(true);
+			
+		}catch(NoConnectionsAvailableException e){
+			LOG.error("No Connection available");
+		}
+		
+	}
+	
+	
 	@Test
 	@Ignore
 	public void MultiplexingMSet() throws InterruptedException{
 		
-		Map<String, byte[]> keysvalues = new HashMap<String, byte[]>();
+		LinkedHashMap<String, byte[]> keysvalues = new LinkedHashMap<String, byte[]>();
 		boolean allgood = true;
 		
 		for(int r=1; r <=9;r++){
@@ -52,19 +181,13 @@ public abstract class AbstractClientTest {
 		}
 		
 		try {
-			LOG.debug("SET : ");
+			LOG.debug("MSET : ");
 			
 			//MSET()
 			CLIENT.send(new MSet(keysvalues));
 			LOG.debug("send(MSet) done");
 			
-			// SET()
-			for(Entry<String, byte[]> entry : keysvalues.entrySet()){
-				System.out.println(CLIENT.send(new Set(entry.getKey(), entry.getValue())).get().value());
-			}
-			
-			
-			System.out.println("\n\n\nMap size = "+keysvalues.size()+"\n\n\n");
+			LOG.debug("\n\n\nMap size = "+keysvalues.size()+"\n\n\n");
 			
 			
 			LOG.debug("GET : ");
@@ -91,7 +214,6 @@ public abstract class AbstractClientTest {
 	public void testSimpleCommands() throws InterruptedException, NoConnectionsAvailableException {
 		
 		CLIENT.send(new Ping());
-		
 		
 	}
 	

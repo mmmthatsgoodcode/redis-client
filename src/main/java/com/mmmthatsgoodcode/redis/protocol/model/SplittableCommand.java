@@ -36,12 +36,19 @@ public abstract class SplittableCommand<C extends SplittableCommand, T extends R
 	protected final AtomicInteger splits = new AtomicInteger(0);
 	
 	@SuppressWarnings("unchecked")
-	public SplittableCommand(Map<String, byte[]> keys) {
+	public SplittableCommand(List<String> keys) {
 		super(keys);
+		this.reply = this.new PendingSplitReply((C) this);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public SplittableCommand(String key) {
+		super(key);
 		this.reply = this.new PendingSplitReply((C) this);
 	}
 
 	public final C split(List<String> keys) {
+		LOG.debug("split() called");
 		this.splits.incrementAndGet();
 		return fragment(keys);
 	}

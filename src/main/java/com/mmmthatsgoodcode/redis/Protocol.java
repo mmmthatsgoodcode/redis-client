@@ -21,7 +21,7 @@ import io.netty.buffer.PooledByteBufAllocator;
 public interface Protocol {
 	
 	public enum ReplyType { BULK, ERROR, INTEGER, MULTI_BULK, STATUS, UNKNOWN }
-	public enum CommandType { GET, SET, SETEX, EXEC, EXISTS, MSET, MULTI, PING, SETNX, WATCH }
+	public enum CommandType { GET, SET, SETEX, EXEC, EXISTS, MSET, MULTI, PING, SADD, SETNX, SINTER, SUNION, WATCH }
 	
 	public ByteBufAllocator getByteBufAllocator();
 	
@@ -33,9 +33,12 @@ public interface Protocol {
 		public void encode(MSet command, ByteBuf out);
 		public void encode(Multi command, ByteBuf out);
 		public void encode(Ping command, ByteBuf out);
+		public void encode(SAdd command, ByteBuf out);
 		public void encode(Set command, ByteBuf out);
 		public void encode(Setex command, ByteBuf out);
 		public void encode(Setnx command, ByteBuf out);
+		public void encode(SInter command, ByteBuf out);
+		public void encode(SUnion command, ByteBuf out);
 		public void encode(Watch command, ByteBuf out);	
 		public void encode(Command command, ByteBuf out) throws OperationNotSupportedException;		
 		public void encode(Transaction command, ByteBuf out) throws OperationNotSupportedException;

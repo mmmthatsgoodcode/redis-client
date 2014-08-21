@@ -21,17 +21,7 @@ import com.mmmthatsgoodcode.redis.Protocol;
 import com.mmmthatsgoodcode.redis.client.Transaction;
 import com.mmmthatsgoodcode.redis.client.UnrecognizedReplyException;
 import com.mmmthatsgoodcode.redis.protocol.Command;
-import com.mmmthatsgoodcode.redis.protocol.command.Exec;
-import com.mmmthatsgoodcode.redis.protocol.command.Exists;
-import com.mmmthatsgoodcode.redis.protocol.command.Get;
-import com.mmmthatsgoodcode.redis.protocol.command.MSet;
-import com.mmmthatsgoodcode.redis.protocol.command.Multi;
-import com.mmmthatsgoodcode.redis.protocol.command.Ping;
-import com.mmmthatsgoodcode.redis.protocol.command.Set;
-import com.mmmthatsgoodcode.redis.protocol.command.Setex;
-import com.mmmthatsgoodcode.redis.protocol.command.Setnx;
-import com.mmmthatsgoodcode.redis.protocol.command.Watch;
-import com.mmmthatsgoodcode.redis.protocol.model.AbstractReply;
+import com.mmmthatsgoodcode.redis.protocol.command.*;
 import com.mmmthatsgoodcode.redis.protocol.model.AbstractReply.ReplyHintBytes;
 import com.mmmthatsgoodcode.redis.protocol.reply.BulkReply;
 import com.mmmthatsgoodcode.redis.protocol.reply.ErrorReply;
@@ -128,6 +118,18 @@ public class Redis2TextProtocol implements Protocol {
 		public void encode(Ping command, ByteBuf out) {
 			encodeNoArgCommand(out, commandNames.get(CommandType.PING));
 		}
+		
+		@Override
+		public void encode(SAdd command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(2+command.getMembers().size());
+			helper.addArg(commandNames.get(CommandType.SADD));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			
+			for(byte[] member : command.getMembers()){
+				helper.addArg(member);
+			}
+		}
 
 		@Override
 		public void encode(Set command, ByteBuf out) {
@@ -141,7 +143,33 @@ public class Redis2TextProtocol implements Protocol {
 
 		@Override
 		public void encode(Setnx command, ByteBuf out) {
-			encode((Set) command, out);
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(3);
+			helper.addArg(commandNames.get(CommandType.SETNX));
+			helper.addArg(command.getKey().getBytes(ENCODING));
+			helper.addArg(command.getValue());
+		}
+		
+		@Override
+		public void encode(SInter command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(1+command.getKeys().size());
+			helper.addArg(commandNames.get(CommandType.SINTER));
+			
+			for(String key : command.getKeys()){
+				helper.addArg(key.getBytes(ENCODING));
+			}
+		}
+		
+		@Override
+		public void encode(SUnion command, ByteBuf out) {
+			EncodeHelper helper = new EncodeHelper(out);
+			helper.addArgc(1+command.getKeys().size());
+			helper.addArg(commandNames.get(CommandType.SUNION));
+			
+			for(String key : command.getKeys()){
+				helper.addArg(key.getBytes(ENCODING));
+			}
 		}
 
 		@Override
@@ -173,30 +201,29 @@ public class Redis2TextProtocol implements Protocol {
 		}
 		
 		public void encode(Command command, ByteBuf out) throws OperationNotSupportedException {
-			if (command instanceof Get) encode((Get) command, out);
+			if (command instanceof Exec) encode((Exec) command, out);
+			else if (command instanceof Exists) encode((Exists) command, out);
+			else if (command instanceof Get) encode((Get) command, out);
+			else if (command instanceof MSet) encode((MSet) command, out);
+			else if (command instanceof Multi) encode((Multi) command, out);
+			else if (command instanceof Ping) encode((Ping) command, out);
+			else if (command instanceof SAdd) encode((SAdd) command, out);
 			else if (command instanceof Set) encode((Set) command, out);
 			else if (command instanceof Setex) encode((Setex) command, out);
-			else if (command instanceof Exists) encode((Exists) command, out);
-			else if (command instanceof Exec) encode((Exec) command, out);
+			else if (command instanceof Setnx) encode((Setnx) command, out);
+			else if (command instanceof SInter) encode((SInter) command, out);
+			else if (command instanceof SUnion) encode((SUnion) command, out);
 			else if (command instanceof Watch) encode((Watch) command, out);
-			else if (command instanceof Ping) encode((Ping) command, out);
-			else if (command instanceof Multi) encode((Multi) command, out);
-			else if (command instanceof MSet) encode((MSet) command, out);
 			else throw new OperationNotSupportedException();
 
 		}		
 
 		@Override
 		public void encode(Transaction transaction, ByteBuf out) throws OperationNotSupportedException {
-			
 			for (Command command:transaction) {
 				encode(command, out);
-
 			}
-			
 		}
-
-		
 	}
 	
 	public class Decoder implements Protocol.Decoder {
@@ -454,15 +481,17 @@ public class Redis2TextProtocol implements Protocol {
 
 
 	private static final Map<CommandType, byte[]> commandNames = new ImmutableMap.Builder<CommandType, byte[]>()
-			.put(CommandType.GET, "GET".getBytes(ENCODING))
 			.put(CommandType.EXEC, "EXEC".getBytes(ENCODING))
 			.put(CommandType.EXISTS, "EXISTS".getBytes(ENCODING))
+			.put(CommandType.GET, "GET".getBytes(ENCODING))
 			.put(CommandType.MSET, "MSET".getBytes(ENCODING))
 			.put(CommandType.MULTI, "MULTI".getBytes(ENCODING))
 			.put(CommandType.PING, "PING".getBytes(ENCODING))
+			.put(CommandType.SADD, "SADD".getBytes(ENCODING))
 			.put(CommandType.SET, "SET".getBytes(ENCODING))
 			.put(CommandType.SETEX, "SETEX".getBytes(ENCODING))
-			.put(CommandType.SETNX, "SETNX".getBytes(ENCODING))
+			.put(CommandType.SINTER, "SINTER".getBytes(ENCODING))
+			.put(CommandType.SUNION, "SUNION".getBytes(ENCODING))
 			.put(CommandType.WATCH, "WATCH".getBytes(ENCODING))
 			.build();
 
