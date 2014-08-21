@@ -46,7 +46,7 @@ public abstract class SplittableCommand<C extends SplittableCommand, T extends R
 		return fragment(keys);
 	}
 	
-	public abstract C fragment(List<String> keys);
+	protected abstract C fragment(List<String> keys);
 	public abstract T combine(List<T> partialReplies);
 		
 }
