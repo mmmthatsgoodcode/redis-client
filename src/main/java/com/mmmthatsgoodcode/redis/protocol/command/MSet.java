@@ -1,6 +1,5 @@
 package com.mmmthatsgoodcode.redis.protocol.command;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,6 +74,6 @@ public class MSet extends SplittableCommand<MSet, StatusReply>{
 	}
 
 	public String toString(){
-		return "MSet";
+		return "MSet "+keysValues.toString();
 	}
 }

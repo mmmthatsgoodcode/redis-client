@@ -71,6 +71,6 @@ public class SUnion extends SplittableCommand<SUnion, MultiBulkReply> {
 	}
 	
 	public String toString(){
-		return "SUnion";
+		return "SUnion "+getKeys().toString();
 	}
 }

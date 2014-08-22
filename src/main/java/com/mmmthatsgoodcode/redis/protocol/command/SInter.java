@@ -3,8 +3,6 @@ package com.mmmthatsgoodcode.redis.protocol.command;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.naming.PartialResultException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,7 +10,6 @@ import com.mmmthatsgoodcode.redis.protocol.Reply;
 import com.mmmthatsgoodcode.redis.protocol.model.PendingReply;
 import com.mmmthatsgoodcode.redis.protocol.model.SplittableCommand;
 import com.mmmthatsgoodcode.redis.protocol.reply.MultiBulkReply;
-import com.mmmthatsgoodcode.redis.protocol.reply.StatusReply;
 
 public class SInter extends SplittableCommand<SInter, MultiBulkReply>{
 
@@ -71,7 +68,7 @@ public class SInter extends SplittableCommand<SInter, MultiBulkReply>{
 	}
 	
 	public String toString(){
-		return "SInter";
+		return "SInter "+getKeys().toString();
 	}
 
 }

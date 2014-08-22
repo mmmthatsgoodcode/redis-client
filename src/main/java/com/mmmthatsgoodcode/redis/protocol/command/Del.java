@@ -65,6 +65,6 @@ public class Del extends SplittableCommand<Del, IntegerReply>{
 	}
 
 	public String toString(){
-		return "Del";
+		return "Del "+getKeys().toString();
 	}
 }

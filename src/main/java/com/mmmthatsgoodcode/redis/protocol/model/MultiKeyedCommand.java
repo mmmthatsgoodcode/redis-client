@@ -1,11 +1,7 @@
 package com.mmmthatsgoodcode.redis.protocol.model;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.CountDownLatch;
 
 import com.mmmthatsgoodcode.redis.protocol.Reply;
 
@@ -18,7 +14,7 @@ public abstract class MultiKeyedCommand<T extends Reply> extends AbstractCommand
 	}
 	
 	public MultiKeyedCommand(String key) {
-		this.keys = (Arrays.asList(key));
+		this(Arrays.asList(key));
 	}
 	
 	public List<String> getKeys() {

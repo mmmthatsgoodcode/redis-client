@@ -26,6 +26,6 @@ public class SAdd extends KeyedCommand<IntegerReply> {
 	}
 	
 	public String toString(){
-		return "SAdd";
+		return "SAdd"+getKey().toString()+" "+getMembers().toString();
 	}
 }
