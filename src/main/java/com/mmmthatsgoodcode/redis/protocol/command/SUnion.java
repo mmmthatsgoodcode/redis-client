@@ -34,7 +34,7 @@ public class SUnion extends SplittableCommand<SUnion, MultiBulkReply> {
 			final int nb = i;
 			
 			public String toString(){
-				return "Sunion-Child n"+nb;
+				return "Child n"+nb+" "+super.toString();
 			}
 			
 			private final PendingReply<MultiBulkReply> childReply = new PendingReply<MultiBulkReply>(this){
@@ -48,7 +48,7 @@ public class SUnion extends SplittableCommand<SUnion, MultiBulkReply> {
 			};
 			
 			public PendingReply<MultiBulkReply> getReply(){
-				LOG.debug("getReply() invoqued");
+				LOG.debug("getReply() invoked");
 				return childReply;
 			}
 		};
@@ -71,6 +71,6 @@ public class SUnion extends SplittableCommand<SUnion, MultiBulkReply> {
 	}
 	
 	public String toString(){
-		return "SUnion-Parent";
+		return "SUnion";
 	}
 }

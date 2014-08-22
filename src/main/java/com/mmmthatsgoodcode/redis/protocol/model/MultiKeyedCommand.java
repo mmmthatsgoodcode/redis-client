@@ -1,6 +1,7 @@
 package com.mmmthatsgoodcode.redis.protocol.model;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -16,10 +17,8 @@ public abstract class MultiKeyedCommand<T extends Reply> extends AbstractCommand
 		this.keys = keys;
 	}
 	
-	// not really necessary, it just takes the pain away from the user of having to create an ArrayList just for 1 key
 	public MultiKeyedCommand(String key) {
-		this.keys = new ArrayList<String>();
-		this.keys.add(key);
+		this.keys = (Arrays.asList(key));
 	}
 	
 	public List<String> getKeys() {

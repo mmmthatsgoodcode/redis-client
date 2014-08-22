@@ -41,7 +41,7 @@ public class MSet extends SplittableCommand<MSet, StatusReply>{
 			final int nb = i;
 			
 			public String toString(){
-				return "MSet-Child n."+nb;
+				return "Child n"+nb+super.toString();
 			}
 			private final PendingReply<StatusReply> childReply = new PendingReply<StatusReply>(this) {
 				
@@ -55,7 +55,7 @@ public class MSet extends SplittableCommand<MSet, StatusReply>{
 			};
 			
 			public PendingReply<StatusReply> getReply() {
-				LOG.debug("getReply() invoqued");
+				LOG.debug("getReply() invoked");
 				return childReply;
 			}
 		};
@@ -75,6 +75,6 @@ public class MSet extends SplittableCommand<MSet, StatusReply>{
 	}
 
 	public String toString(){
-		return "MSet-Parent";
+		return "MSet";
 	}
 }

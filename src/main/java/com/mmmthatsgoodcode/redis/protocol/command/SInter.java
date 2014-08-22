@@ -37,7 +37,7 @@ public class SInter extends SplittableCommand<SInter, MultiBulkReply>{
 			final int nb = i;
 			
 			public String toString(){
-				return "SInter-Child n."+nb;
+				return "Child n"+nb+" "+super.toString();
 			}
 			
 			private final PendingReply<MultiBulkReply> childReply = new PendingReply<MultiBulkReply>(this) {
@@ -51,7 +51,7 @@ public class SInter extends SplittableCommand<SInter, MultiBulkReply>{
 			};
 			
 			public PendingReply<MultiBulkReply> getReply(){
-				LOG.debug("getReply() invoqued");
+				LOG.debug("getReply() invoked");
 				return childReply;
 			}
 		};
@@ -71,7 +71,7 @@ public class SInter extends SplittableCommand<SInter, MultiBulkReply>{
 	}
 	
 	public String toString(){
-		return "SInter-Parent";
+		return "SInter";
 	}
 
 }

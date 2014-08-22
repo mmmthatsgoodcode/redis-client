@@ -33,7 +33,7 @@ public class Del extends SplittableCommand<Del, IntegerReply>{
 			final int nb = i;
 			
 			public String toString(){
-				return "Del-Child n."+nb;
+				return "Child n."+nb+" "+super.toString();
 			}
 			
 			private final PendingReply<IntegerReply> childReply = new PendingReply<IntegerReply>(this){
@@ -47,7 +47,7 @@ public class Del extends SplittableCommand<Del, IntegerReply>{
 			};
 			
 			public PendingReply<IntegerReply> getReply(){
-				LOG.debug("getReply() invoqued");
+				LOG.debug("getReply() invoked");
 				return childReply;
 			}
 		};
@@ -65,6 +65,6 @@ public class Del extends SplittableCommand<Del, IntegerReply>{
 	}
 
 	public String toString(){
-		return "Del-Parent";
+		return "Del";
 	}
 }

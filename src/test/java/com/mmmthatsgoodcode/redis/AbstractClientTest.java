@@ -45,7 +45,7 @@ public abstract class AbstractClientTest {
 	
 	
 	@Test
-	@Ignore
+	//@Ignore
 	public void MultiplexingSInter() throws InterruptedException{
 		//Generating random Sets
 				Map<String, List<byte[]>> keysvalues = new HashMap<String, List<byte[]>>();
@@ -97,22 +97,20 @@ public abstract class AbstractClientTest {
 								}
 							}
 							if(!isthere){
-								assertFalse(true);
+								fail();
 							}
 						}
 					}else{
 					LOG.debug("Empty set of Reply");
 					}
 					LOG.debug("All went well!");
-					assertTrue(true);
-					
 				}catch(NoConnectionsAvailableException e){
 					LOG.error("No Connection available");
 				}
 	}
 	
 	@Test
-	@Ignore
+	//@Ignore
 	public void MultiplexingSUnion() throws InterruptedException{
 		
 		//Generating random Sets
@@ -152,14 +150,12 @@ public abstract class AbstractClientTest {
 			//checks if each reply is unique
 			for(Reply reply : replies){
 				if(comparator.contains(reply)){
-					assertTrue(false);
+					fail();
 				}
 				else{
 					comparator.add(reply);
 				}
 			}
-			assertTrue(true);
-			
 		}catch(NoConnectionsAvailableException e){
 			LOG.error("No Connection available");
 		}
@@ -168,7 +164,7 @@ public abstract class AbstractClientTest {
 	
 	
 	@Test
-	@Ignore
+	//@Ignore
 	public void MultiplexingMSet() throws InterruptedException{
 		
 		LinkedHashMap<String, byte[]> keysvalues = new LinkedHashMap<String, byte[]>();
@@ -202,7 +198,7 @@ public abstract class AbstractClientTest {
 				}
 			}
 			Thread.sleep(2000);
-			assertTrue(allgood);
+			assertEquals(allgood, true);
 		} catch (NoConnectionsAvailableException e) {
 			LOG.error("No Connection available");
 		}
@@ -243,7 +239,7 @@ public abstract class AbstractClientTest {
 						timer = getLatency.time();
 						String reply = new String( CLIENT.send(new Get(id)).get().value() );
 						timer.stop();
-						assertTrue(reply.equals(value));
+						assertEquals(value, reply);
 						
 					} catch (IllegalStateException e) {
 						System.err.println(id+" Timed out");
