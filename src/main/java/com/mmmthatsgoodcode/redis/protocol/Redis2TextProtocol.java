@@ -21,17 +21,7 @@ import com.mmmthatsgoodcode.redis.Protocol;
 import com.mmmthatsgoodcode.redis.client.Transaction;
 import com.mmmthatsgoodcode.redis.client.UnrecognizedReplyException;
 import com.mmmthatsgoodcode.redis.protocol.Command;
-import com.mmmthatsgoodcode.redis.protocol.command.Exec;
-import com.mmmthatsgoodcode.redis.protocol.command.Exists;
-import com.mmmthatsgoodcode.redis.protocol.command.Get;
-import com.mmmthatsgoodcode.redis.protocol.command.MSet;
-import com.mmmthatsgoodcode.redis.protocol.command.Multi;
-import com.mmmthatsgoodcode.redis.protocol.command.Ping;
-import com.mmmthatsgoodcode.redis.protocol.command.Set;
-import com.mmmthatsgoodcode.redis.protocol.command.Setex;
-import com.mmmthatsgoodcode.redis.protocol.command.Setnx;
-import com.mmmthatsgoodcode.redis.protocol.command.Watch;
-import com.mmmthatsgoodcode.redis.protocol.model.AbstractReply;
+import com.mmmthatsgoodcode.redis.protocol.command.*;
 import com.mmmthatsgoodcode.redis.protocol.model.AbstractReply.ReplyHintBytes;
 import com.mmmthatsgoodcode.redis.protocol.reply.BulkReply;
 import com.mmmthatsgoodcode.redis.protocol.reply.ErrorReply;
@@ -182,6 +172,29 @@ public class Redis2TextProtocol implements Protocol {
 			else if (command instanceof Ping) encode((Ping) command, out);
 			else if (command instanceof Multi) encode((Multi) command, out);
 			else if (command instanceof MSet) encode((MSet) command, out);
+			else if (command instanceof Bgrewriteaof) encode((Bgrewriteaof) command, out);
+			else if (command instanceof Bgsave) encode((Bgsave) command, out);
+			else if (command instanceof ClientGetname) encode((ClientGetname) command, out);
+			else if (command instanceof ClientList) encode((ClientList) command, out);
+			else if (command instanceof ClusterSlots) encode((ClusterSlots) command, out);
+			else if (command instanceof com.mmmthatsgoodcode.redis.protocol.command.Command) encode((com.mmmthatsgoodcode.redis.protocol.command.Command) command, out);
+			else if (command instanceof CommandCount) encode((CommandCount) command, out);
+			else if (command instanceof ConfigResetstat) encode((ConfigResetstat) command, out);
+			else if (command instanceof ConfigRewrite) encode((ConfigRewrite) command, out);
+			else if (command instanceof Dbsize) encode((Dbsize) command, out);
+			else if (command instanceof DebugSegfault) encode((DebugSegfault) command, out);
+			else if (command instanceof Discard) encode((Discard) command, out);
+			else if (command instanceof Flushall) encode((Flushall) command, out);
+			else if (command instanceof Flushdb) encode((Flushdb) command, out);
+			else if (command instanceof Lastsave) encode((Lastsave) command, out);
+			else if (command instanceof Quit) encode((Quit) command, out);
+			else if (command instanceof Randomkey) encode((Randomkey) command, out);
+			else if (command instanceof Role) encode((Role) command, out);
+			else if (command instanceof Save) encode((Save) command, out);
+			else if (command instanceof ScriptFlush) encode((ScriptFlush) command, out);
+			else if (command instanceof ScriptKill) encode((ScriptKill) command, out);
+			else if (command instanceof Time) encode((Time) command, out);
+			else if (command instanceof Unwatch) encode((Unwatch) command, out);
 			else throw new OperationNotSupportedException();
 
 		}		
@@ -194,6 +207,121 @@ public class Redis2TextProtocol implements Protocol {
 
 			}
 			
+		}
+
+		@Override
+		public void encode(Bgrewriteaof command, ByteBuf out) {
+			encodeNoArgCommand(out, commandNames.get(CommandType.BGREWRITEAOF));
+		}
+
+		@Override
+		public void encode(Bgsave command, ByteBuf out) {
+			encodeNoArgCommand(out, commandNames.get(CommandType.BGSAVE));
+		}
+
+		@Override
+		public void encode(ClientGetname command, ByteBuf out) {
+			encodeNoArgCommand(out, commandNames.get(CommandType.CLIENTGETNAME));
+		}
+
+		@Override
+		public void encode(ClientList command, ByteBuf out) {
+			encodeNoArgCommand(out, commandNames.get(CommandType.CLIENTLIST));
+		}
+
+		@Override
+		public void encode(ClusterSlots command, ByteBuf out) {
+			encodeNoArgCommand(out, commandNames.get(CommandType.CLUSTERSLOTS));
+		}
+
+		@Override
+		public void encode(com.mmmthatsgoodcode.redis.protocol.command.Command command, ByteBuf out) {
+			encodeNoArgCommand(out, commandNames.get(CommandType.COMMAND));
+		}
+
+		@Override
+		public void encode(CommandCount command, ByteBuf out) {
+			encodeNoArgCommand(out, commandNames.get(CommandType.COMMANDCOUNT));
+		}
+
+		@Override
+		public void encode(ConfigResetstat command, ByteBuf out) {
+			encodeNoArgCommand(out, commandNames.get(CommandType.CONFIGRESETSTAT));
+		}
+
+		@Override
+		public void encode(ConfigRewrite command, ByteBuf out) {
+			encodeNoArgCommand(out, commandNames.get(CommandType.CONFIGREWRITE));
+		}
+
+		@Override
+		public void encode(Dbsize command, ByteBuf out) {
+			encodeNoArgCommand(out, commandNames.get(CommandType.DBSIZE));
+		}
+
+		@Override
+		public void encode(DebugSegfault command, ByteBuf out) {
+			encodeNoArgCommand(out, commandNames.get(CommandType.DEBUGSEGFAULT));
+		}
+
+		@Override
+		public void encode(Discard command, ByteBuf out) {
+			encodeNoArgCommand(out, commandNames.get(CommandType.DISCARD));
+		}
+
+		@Override
+		public void encode(Flushall command, ByteBuf out) {
+			encodeNoArgCommand(out, commandNames.get(CommandType.FLUSHALL));
+		}
+
+		@Override
+		public void encode(Flushdb command, ByteBuf out) {
+			encodeNoArgCommand(out, commandNames.get(CommandType.FLUSHDB));
+		}
+
+		@Override
+		public void encode(Lastsave command, ByteBuf out) {
+			encodeNoArgCommand(out, commandNames.get(CommandType.LASTSAVE));
+		}
+
+		@Override
+		public void encode(Quit command, ByteBuf out) {
+			encodeNoArgCommand(out, commandNames.get(CommandType.QUIT));
+		}
+
+		@Override
+		public void encode(Randomkey command, ByteBuf out) {
+			encodeNoArgCommand(out, commandNames.get(CommandType.RANDOMKEY));
+		}
+
+		@Override
+		public void encode(Role command, ByteBuf out) {
+			encodeNoArgCommand(out, commandNames.get(CommandType.ROLE));
+		}
+
+		@Override
+		public void encode(Save command, ByteBuf out) {
+			encodeNoArgCommand(out, commandNames.get(CommandType.SAVE));
+		}
+
+		@Override
+		public void encode(ScriptFlush command, ByteBuf out) {
+			encodeNoArgCommand(out, commandNames.get(CommandType.SCRIPTFLUSH));
+		}
+
+		@Override
+		public void encode(ScriptKill command, ByteBuf out) {
+			encodeNoArgCommand(out, commandNames.get(CommandType.SCRIPTKILL));
+		}
+
+		@Override
+		public void encode(Time command, ByteBuf out) {
+			encodeNoArgCommand(out, commandNames.get(CommandType.TIME));
+		}
+
+		@Override
+		public void encode(Unwatch command, ByteBuf out) {
+			encodeNoArgCommand(out, commandNames.get(CommandType.UNWATCH));
 		}
 
 		
@@ -464,6 +592,29 @@ public class Redis2TextProtocol implements Protocol {
 			.put(CommandType.SETEX, "SETEX".getBytes(ENCODING))
 			.put(CommandType.SETNX, "SETNX".getBytes(ENCODING))
 			.put(CommandType.WATCH, "WATCH".getBytes(ENCODING))
+			.put(CommandType.BGREWRITEAOF, "BGREWRITEAOF".getBytes(ENCODING))
+			.put(CommandType.BGSAVE, "BGSAVE".getBytes(ENCODING))
+			.put(CommandType.CLIENTGETNAME, "CLIENT GETNAME".getBytes(ENCODING))
+			.put(CommandType.CLIENTLIST, "CLIENT LIST".getBytes(ENCODING))
+			.put(CommandType.CLUSTERSLOTS, "CLUSTER SLOTS".getBytes(ENCODING))
+			.put(CommandType.COMMAND, "COMMAND".getBytes(ENCODING))
+			.put(CommandType.COMMANDCOUNT, "COMMAND COUNT".getBytes(ENCODING))
+			.put(CommandType.CONFIGRESETSTAT, "CONFIG RESETSTAT".getBytes(ENCODING))
+			.put(CommandType.CONFIGREWRITE, "CONFIG REWRITE".getBytes(ENCODING))
+			.put(CommandType.DBSIZE, "DBSIZE".getBytes(ENCODING))
+			.put(CommandType.DEBUGSEGFAULT, "DEBUG SEGFAULT".getBytes(ENCODING))
+			.put(CommandType.DISCARD, "DISCARD".getBytes(ENCODING))
+			.put(CommandType.FLUSHALL, "FLUSHALL".getBytes(ENCODING))
+			.put(CommandType.FLUSHDB, "FLUSHDB".getBytes(ENCODING))
+			.put(CommandType.LASTSAVE, "LASTSAVE".getBytes(ENCODING))
+			.put(CommandType.QUIT, "QUIT".getBytes(ENCODING))
+			.put(CommandType.RANDOMKEY, "RANDOMKEY".getBytes(ENCODING))
+			.put(CommandType.ROLE, "ROLE".getBytes(ENCODING))
+			.put(CommandType.SAVE, "SAVE".getBytes(ENCODING))
+			.put(CommandType.SCRIPTFLUSH, "SCRIPT FLUSH".getBytes(ENCODING))
+			.put(CommandType.SCRIPTKILL, "SCRIPT KILL".getBytes(ENCODING))
+			.put(CommandType.TIME, "TIME".getBytes(ENCODING))
+			.put(CommandType.UNWATCH, "UNWATCH".getBytes(ENCODING))
 			.build();
 
 	
