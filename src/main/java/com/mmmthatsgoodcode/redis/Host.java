@@ -19,7 +19,6 @@ import java.util.Random;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.lmax.disruptor.WaitStrategy;
 import com.mmmthatsgoodcode.redis.RedisClient.HostInfo;
 import com.mmmthatsgoodcode.redis.client.NoConnectionsAvailableException;
 import com.mmmthatsgoodcode.redis.client.Transaction;
@@ -37,7 +36,6 @@ public class Host {
 		private int numConnections = 1;
 		private Client client;
 		private int sendBufferSize = 1024;
-		private WaitStrategy sendWaitStrategy;
 		private Map<ChannelOption, Object> channelOptions = new HashMap<ChannelOption, Object>();
 		
 		public Builder forClient(Client client) {
