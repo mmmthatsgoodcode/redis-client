@@ -1,8 +1,8 @@
 package com.mmmthatsgoodcode.redis.protocol.model;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
@@ -36,12 +36,17 @@ public abstract class SplittableCommand<C extends SplittableCommand, T extends R
 	protected final AtomicInteger splits = new AtomicInteger(0);
 	
 	@SuppressWarnings("unchecked")
-	public SplittableCommand(Map<String, byte[]> keys) {
+	public SplittableCommand(List<String> keys) {
 		super(keys);
 		this.reply = this.new PendingSplitReply((C) this);
 	}
+	
+	public SplittableCommand(String key) {
+		this(Arrays.asList(key));
+	}
 
 	public final C split(List<String> keys) {
+		LOG.debug("split() called");
 		this.splits.incrementAndGet();
 		return fragment(keys);
 	}
