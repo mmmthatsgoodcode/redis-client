@@ -21,7 +21,7 @@ import io.netty.buffer.PooledByteBufAllocator;
 public interface Protocol {
 	
 	public enum ReplyType { BULK, ERROR, INTEGER, MULTI_BULK, STATUS, UNKNOWN }
-	public enum CommandType { GET, SET, SETEX, EXEC, EXISTS, MSET, MULTI, PING, SETNX, WATCH }
+	public enum CommandType { GET, SET, SETEX, EXEC, EXISTS, MSET, MULTI, PING, SETNX, WATCH, BGREWRITEAOF, BGSAVE, CLIENTGETNAME, CLIENTLIST, CLUSTERSLOTS, COMMAND, COMMANDCOUNT, CONFIGRESETSTAT, CONFIGREWRITE, DBSIZE,DEBUGSEGFAULT, DISCARD, FLUSHALL, FLUSHDB, LASTSAVE, QUIT, RANDOMKEY, ROLE, SAVE, SCRIPTFLUSH, SCRIPTKILL, TIME, UNWATCH }
 	
 	public ByteBufAllocator getByteBufAllocator();
 	
@@ -36,7 +36,30 @@ public interface Protocol {
 		public void encode(Set command, ByteBuf out);
 		public void encode(Setex command, ByteBuf out);
 		public void encode(Setnx command, ByteBuf out);
-		public void encode(Watch command, ByteBuf out);	
+		public void encode(Watch command, ByteBuf out);
+		public void encode(Bgrewriteaof command, ByteBuf out);
+		public void encode(Bgsave command, ByteBuf out);
+		public void encode(ClientGetname command, ByteBuf out);
+		public void encode(ClientList command, ByteBuf out);
+		public void encode(ClusterSlots command, ByteBuf out);
+		public void encode(com.mmmthatsgoodcode.redis.protocol.command.Command command, ByteBuf out);
+		public void encode(CommandCount command, ByteBuf out);
+		public void encode(ConfigResetstat command, ByteBuf out);
+		public void encode(ConfigRewrite command, ByteBuf out);
+		public void encode(Dbsize command, ByteBuf out);
+		public void encode(DebugSegfault command, ByteBuf out);
+		public void encode(Discard command, ByteBuf out);
+		public void encode(Flushall command, ByteBuf out);
+		public void encode(Flushdb command, ByteBuf out);
+		public void encode(Lastsave command, ByteBuf out);
+		public void encode(Quit command, ByteBuf out);
+		public void encode(Randomkey command, ByteBuf out);
+		public void encode(Role command, ByteBuf out);
+		public void encode(Save command, ByteBuf out);
+		public void encode(ScriptFlush command, ByteBuf out);
+		public void encode(ScriptKill command, ByteBuf out);
+		public void encode(Time command, ByteBuf out);
+		public void encode(Unwatch command, ByteBuf out);
 		public void encode(Command command, ByteBuf out) throws OperationNotSupportedException;		
 		public void encode(Transaction command, ByteBuf out) throws OperationNotSupportedException;
 		
